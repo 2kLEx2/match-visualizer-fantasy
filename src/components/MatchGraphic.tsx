@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
-import { Shield } from 'lucide-react';
+import { Shield, Clock } from 'lucide-react';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -42,15 +42,14 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     matches.forEach(match => {
       if (match.team1.logo) preloadImage(match.team1.logo).catch(console.error);
       if (match.team2.logo) preloadImage(match.team2.logo).catch(console.error);
-      if (match.tournament_logo) preloadImage(match.tournament_logo).catch(console.error);
     });
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
     if (!logo || !loadedImages[logo]) {
       return (
-        <div className="w-[50px] h-[50px] flex items-center justify-center">
-          <Shield className="w-8 h-8 text-gray-400" />
+        <div className="w-[32px] h-[32px] flex items-center justify-center">
+          <Shield className="w-6 h-6 text-gray-400" />
         </div>
       );
     }
@@ -59,7 +58,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       <img 
         src={logo}
         alt={`${teamName} logo`}
-        className="w-[50px] h-[50px] object-contain"
+        className="w-[32px] h-[32px] object-contain"
         crossOrigin="anonymous"
         onError={(e) => {
           console.error(`Error loading image for ${teamName}:`, e);
@@ -71,7 +70,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
-      className="space-y-6 w-[1066px] animate-fade-in"
+      className="space-y-4 w-[800px] animate-fade-in"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
@@ -80,70 +79,51 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       {matches.map((match) => (
         <div 
           key={match.id}
-          className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl"
+          className="rounded-lg overflow-hidden transition-all duration-300 hover:bg-slate-800/50"
           style={{
-            background: 'linear-gradient(to bottom, #959595, #3b3b3b)',
+            background: 'linear-gradient(to right, #1a1a1a, #2d2d2d)',
           }}
         >
-          <div className="p-6 grid grid-cols-[auto_1fr_auto] gap-5 items-center">
+          <div className="p-4 flex items-center gap-6">
             {/* Match Time */}
             {settings.showTime && (
-              <div className="text-3xl font-bold text-black min-w-[100px] text-center">
-                {match.time}
+              <div className="flex items-center gap-2 min-w-[100px]">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <span className="text-lg font-medium text-white">
+                  {match.time}
+                </span>
               </div>
             )}
 
-            {/* Teams */}
-            <div className="flex flex-col gap-5 min-w-[400px]">
+            {/* Teams Container */}
+            <div className="flex items-center gap-4 flex-1">
               {/* Team 1 */}
-              <div className="flex items-center gap-[50px]">
-                {settings.showLogos && (
-                  <div className="ml-20">
-                    {renderLogo(match.team1.logo, match.team1.name)}
-                  </div>
-                )}
-                <span className="text-2xl font-bold text-black">
+              <div className="flex items-center gap-3">
+                {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
+                <span className="text-lg font-medium text-white">
                   {match.team1.name}
                 </span>
               </div>
 
-              {/* Separator */}
-              <div className="h-0.5 bg-black/20 w-[300px] ml-6" />
+              {/* VS Separator */}
+              <span className="text-sm font-medium text-gray-500 px-2">
+                vs
+              </span>
 
               {/* Team 2 */}
-              <div className="flex items-center gap-[50px]">
-                {settings.showLogos && (
-                  <div className="ml-20">
-                    {renderLogo(match.team2.logo, match.team2.name)}
-                  </div>
-                )}
-                <span className="text-2xl font-bold text-black">
+              <div className="flex items-center gap-3">
+                {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
+                <span className="text-lg font-medium text-white">
                   {match.team2.name}
                 </span>
               </div>
             </div>
 
-            {/* Tournament Section */}
-            <div className="flex items-center gap-5 min-w-[400px]">
-              {/* Tournament Logo Container */}
-              <div className="w-[200px] flex items-center justify-center">
-                <img 
-                  src={match.tournament_logo || '/placeholder.svg'}
-                  alt={`${match.tournament} logo`}
-                  className="w-[78px] h-[78px] object-contain rounded-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder.svg';
-                  }}
-                />
-              </div>
-
-              {/* Tournament Name */}
-              <div className="flex items-center justify-center">
-                <span className="text-2xl font-bold text-black max-w-[400px] text-center">
-                  {match.tournament}
-                </span>
-              </div>
+            {/* Tournament Name (Optional) */}
+            <div className="min-w-[200px] text-right">
+              <span className="text-sm font-medium text-gray-400">
+                {match.tournament}
+              </span>
             </div>
           </div>
         </div>
