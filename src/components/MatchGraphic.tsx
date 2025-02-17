@@ -138,7 +138,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               </div>
             </div>
             {isBIG && (
-              <div className="text-xs text-primary font-medium text-center italic">
+              <div className="text-xs text-primary font-medium italic pl-[70px]">
                 Anwesenheitspflicht
               </div>
             )}
