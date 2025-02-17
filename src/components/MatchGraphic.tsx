@@ -1,6 +1,7 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Match } from '@/lib/api/matches';
+import { Shield } from 'lucide-react';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -14,63 +15,20 @@ interface MatchGraphicProps {
 }
 
 export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
-  const [loadedImages, setLoadedImages] = useState<{ [key: string]: string }>({});
   const scaleFactor = settings.scale / 100;
 
-  useEffect(() => {
-    // Preload all images and convert them to base64
-    const loadImages = async () => {
-      const imagePromises = matches.flatMap(match => [
-        { url: match.team1.logo, id: `${match.id}-team1` },
-        { url: match.team2.logo, id: `${match.id}-team2` }
-      ]);
-
-      const loadedImagesMap: { [key: string]: string } = {};
-
-      await Promise.all(
-        imagePromises.map(async ({ url, id }) => {
-          try {
-            // Use img element to load image instead of fetch
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            await new Promise<void>((resolve, reject) => {
-              img.onload = () => {
-                // Create canvas to convert image to base64
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.drawImage(img, 0, 0);
-                  try {
-                    loadedImagesMap[id] = canvas.toDataURL('image/png');
-                  } catch (e) {
-                    console.error('Failed to convert image to base64:', e);
-                  }
-                }
-                resolve();
-              };
-              img.onerror = () => {
-                console.error(`Failed to load image: ${url}`);
-                resolve(); // Resolve anyway to continue with other images
-              };
-              // Add timestamp to bypass cache
-              img.src = `${url}?t=${new Date().getTime()}`;
-            });
-          } catch (error) {
-            console.error(`Failed to process image: ${url}`, error);
-          }
-        })
-      );
-
-      setLoadedImages(loadedImagesMap);
-    };
-
-    if (settings.showLogos && matches.length > 0) {
-      loadImages();
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // Replace failed image with a div containing the Shield icon
+    const imgElement = e.currentTarget;
+    imgElement.style.display = 'none';
+    const iconContainer = imgElement.parentElement;
+    if (iconContainer) {
+      const iconDiv = document.createElement('div');
+      iconDiv.className = 'w-8 h-8 flex items-center justify-center bg-white/10 rounded';
+      iconDiv.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>`;
+      iconContainer.appendChild(iconDiv);
     }
-  }, [matches, settings.showLogos]);
+  };
   
   return (
     <div
@@ -87,22 +45,26 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
           <div key={match.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {settings.showLogos && (
-                <img 
-                  src={loadedImages[`${match.id}-team1`] || match.team1.logo} 
-                  alt={match.team1.name} 
-                  className="w-8 h-8 object-contain"
-                  crossOrigin="anonymous"
-                />
+                <div className="w-8 h-8 relative">
+                  <img 
+                    src={match.team1.logo}
+                    alt={match.team1.name} 
+                    className="w-8 h-8 object-contain"
+                    onError={handleImageError}
+                  />
+                </div>
               )}
               <span className="font-bold text-lg">{match.team1.name}</span>
               <span className="text-lg">vs</span>
               {settings.showLogos && (
-                <img 
-                  src={loadedImages[`${match.id}-team2`] || match.team2.logo} 
-                  alt={match.team2.name} 
-                  className="w-8 h-8 object-contain"
-                  crossOrigin="anonymous"
-                />
+                <div className="w-8 h-8 relative">
+                  <img 
+                    src={match.team2.logo}
+                    alt={match.team2.name} 
+                    className="w-8 h-8 object-contain"
+                    onError={handleImageError}
+                  />
+                </div>
               )}
               <span className="font-bold text-lg">{match.team2.name}</span>
             </div>
