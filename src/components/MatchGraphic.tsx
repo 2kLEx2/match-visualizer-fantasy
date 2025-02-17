@@ -22,40 +22,30 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     if (!src) return Promise.reject(new Error('No image source provided'));
     if (loadedImages[src] !== undefined) return Promise.resolve(src);
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         setLoadedImages(prev => ({ ...prev, [src]: true }));
         resolve(src);
       };
-      img.onerror = () => {
-        // Silently handle the error and mark the image as failed
+      img.onerror = (error) => {
+        console.error('Image load error:', error);
         setLoadedImages(prev => ({ ...prev, [src]: false }));
-        resolve(src); // Resolve anyway to prevent error propagation
+        reject(error);
       };
       img.src = src;
     });
   };
 
   useEffect(() => {
-    const loadImages = async () => {
-      const imagePromises = matches.flatMap(match => [
-        match.team1.logo && preloadImage(match.team1.logo),
-        match.team2.logo && preloadImage(match.team2.logo),
-      ]).filter(Boolean);
-
-      // Wait for all images to either load or fail silently
-      await Promise.all(imagePromises).catch(() => {
-        // Ignore any errors since we handle them in preloadImage
-      });
-    };
-
-    loadImages();
+    matches.forEach(match => {
+      if (match.team1.logo) preloadImage(match.team1.logo).catch(console.error);
+      if (match.team2.logo) preloadImage(match.team2.logo).catch(console.error);
+    });
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
-    // Show fallback if no logo or if logo failed to load
     if (!logo || !loadedImages[logo]) {
       return (
         <div className="w-10 h-10 flex items-center justify-center">
@@ -64,13 +54,16 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    // Show logo if it loaded successfully
     return (
       <img 
         src={logo}
         alt={`${teamName} logo`}
-        className="w-full h-full object-contain"
+        className="w-10 h-10 object-contain"
         crossOrigin="anonymous"
+        onError={(e) => {
+          console.error(`Error loading image for ${teamName}:`, e);
+          setLoadedImages(prev => ({ ...prev, [logo]: false }));
+        }}
       />
     );
   };
