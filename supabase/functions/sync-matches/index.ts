@@ -6,18 +6,6 @@ const PANDASCORE_API_KEY = Deno.env.get('PANDASCORE_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-// Create a Supabase client with the service role key
-const supabase = createClient(
-  SUPABASE_URL!,
-  SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
-
 interface PandaScoreMatch {
   id: number
   begin_at: string
@@ -34,11 +22,27 @@ interface PandaScoreMatch {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Create a new Supabase client for each request
+    const supabase = createClient(
+      SUPABASE_URL!,
+      SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+        db: {
+          schema: 'public'
+        }
+      }
+    )
+
     console.log('Starting sync process...')
     
     // Get current date in ISO format for the range parameter
@@ -48,7 +52,11 @@ Deno.serve(async (req) => {
     
     console.log(`Fetching matches from PandaScore for range: ${range}`)
     
-    // Fetch upcoming CS:GO matches with improved parameters
+    if (!PANDASCORE_API_KEY) {
+      throw new Error('PANDASCORE_API_KEY is not set')
+    }
+
+    // Fetch upcoming CS:GO matches
     const response = await fetch(
       `https://api.pandascore.co/csgo/matches/upcoming?${range}&sort=begin_at&per_page=50&status=not_started`,
       {
@@ -92,7 +100,7 @@ Deno.serve(async (req) => {
 
     console.log(`Processing ${relevantMatches.length} relevant matches`)
 
-    // Clean up old matches
+    // Clean up old matches first
     const { error: deleteError } = await supabase
       .from('matches')
       .delete()
@@ -108,7 +116,8 @@ Deno.serve(async (req) => {
       const { error: upsertError } = await supabase
         .from('matches')
         .upsert(relevantMatches, {
-          onConflict: 'id'
+          onConflict: 'id',
+          count: 'exact'
         })
 
       if (upsertError) {
@@ -122,8 +131,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         matchesSync: relevantMatches.length,
         timestamp: new Date().toISOString()
       }),
@@ -133,9 +142,9 @@ Deno.serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error syncing matches:', error)
+    console.error('Error in sync-matches function:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         timestamp: new Date().toISOString()
       }),
