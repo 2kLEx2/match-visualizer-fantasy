@@ -133,7 +133,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
                 {/* Tournament region indicator */}
                 <div className="text-xs font-medium text-gray-500 uppercase ml-2">
-                  POL
+                  {match.tournament}
                 </div>
               </div>
             </div>
