@@ -24,7 +24,6 @@ interface PandaScoreMatch {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -32,9 +31,14 @@ Deno.serve(async (req) => {
   try {
     console.log('Fetching matches from PandaScore...')
     
-    // Fetch upcoming CS:GO matches from PandaScore
+    // Get current date in ISO format for the range parameter
+    const now = new Date()
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const range = `begin_at=timestamp,${now.toISOString()},${tomorrow.toISOString()}`
+    
+    // Fetch upcoming CS:GO matches with improved parameters
     const response = await fetch(
-      'https://api.pandascore.co/csgo/matches/upcoming?per_page=50',
+      `https://api.pandascore.co/csgo/matches/upcoming?${range}&sort=begin_at&per_page=50&status=not_started`,
       {
         headers: {
           'Authorization': `Bearer ${PANDASCORE_API_KEY}`,
@@ -49,10 +53,14 @@ Deno.serve(async (req) => {
     const matches: PandaScoreMatch[] = await response.json()
     console.log(`Found ${matches.length} upcoming matches`)
 
-    // Transform and filter matches for the next 24 hours
-    const next24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    // Transform matches with better filtering
     const relevantMatches = matches
-      .filter(match => new Date(match.begin_at) <= next24Hours)
+      .filter(match => 
+        match.opponents && 
+        match.opponents.length >= 2 &&
+        match.opponents[0]?.opponent &&
+        match.opponents[1]?.opponent
+      )
       .map(match => ({
         id: match.id.toString(),
         start_time: match.begin_at,
@@ -65,26 +73,31 @@ Deno.serve(async (req) => {
 
     console.log(`Syncing ${relevantMatches.length} matches to database`)
 
-    // Delete existing matches that are more than 24 hours old
-    // (We have a trigger that does this, but let's clean up before inserting new ones)
+    // Clean up old matches
     await supabase
       .from('matches')
       .delete()
       .lt('start_time', new Date().toISOString())
 
-    // Upsert new matches
-    const { error } = await supabase
-      .from('matches')
-      .upsert(relevantMatches, {
-        onConflict: 'id'
-      })
+    if (relevantMatches.length > 0) {
+      // Upsert new matches
+      const { error } = await supabase
+        .from('matches')
+        .upsert(relevantMatches, {
+          onConflict: 'id'
+        })
 
-    if (error) {
-      throw error
+      if (error) {
+        throw error
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true, matchesSync: relevantMatches.length }),
+      JSON.stringify({ 
+        success: true, 
+        matchesSync: relevantMatches.length,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -93,7 +106,10 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error syncing matches:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
