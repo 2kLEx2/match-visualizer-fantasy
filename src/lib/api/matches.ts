@@ -35,8 +35,8 @@ function proxyImageUrl(url: string): string {
   // Remove any query parameters from the URL
   const baseUrl = url.split('?')[0];
   
-  // Create a proxy URL through Supabase Functions
-  const proxyUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/proxy-image?url=${encodeURIComponent(baseUrl)}`;
+  // Create a proxy URL through Supabase Functions using Vite's import.meta.env
+  const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-image?url=${encodeURIComponent(baseUrl)}`;
   return proxyUrl;
 }
 
