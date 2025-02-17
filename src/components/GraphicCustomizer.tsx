@@ -47,8 +47,24 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
     if (graphicRef.current) {
       try {
-        const canvas = await html2canvas(graphicRef.current);
-        const image = canvas.toDataURL('image/png');
+        const canvas = await html2canvas(graphicRef.current, {
+          backgroundColor: settings.backgroundColor,
+          scale: 2, // Increase quality
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          onclone: (clonedDoc) => {
+            // Ensure all images are loaded before capture
+            const images = clonedDoc.getElementsByTagName('img');
+            Array.from(images).forEach(img => {
+              if (!img.complete) {
+                img.style.display = 'none';
+              }
+            });
+          }
+        });
+        
+        const image = canvas.toDataURL('image/png', 1.0);
         const link = document.createElement('a');
         link.href = image;
         link.download = 'match-graphic.png';

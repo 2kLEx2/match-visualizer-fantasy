@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
 
@@ -28,10 +28,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       iconContainer.appendChild(iconDiv);
     }
   };
-  
+
   return (
     <div
-      className="rounded-xl overflow-hidden shadow-2xl"
+      className="rounded-xl overflow-hidden shadow-2xl w-[600px]"
       style={{
         backgroundColor: settings.backgroundColor,
         color: settings.textColor,
@@ -49,8 +49,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
             key={match.id} 
             className="flex items-center justify-between p-4 rounded-lg backdrop-blur-sm bg-[#1A1F2C]/40 hover:bg-[#1A1F2C]/60 transition-all border border-[#9b87f5]/20"
           >
-            <div className="flex items-center space-x-6 flex-1">
-              <div className="flex items-center space-x-4 flex-1">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-4">
                 {settings.showLogos && (
                   <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
                     <img 
@@ -58,20 +58,21 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
                       alt={match.team1.name} 
                       className="w-full h-full object-contain"
                       onError={handleImageError}
+                      crossOrigin="anonymous"
                     />
                   </div>
                 )}
                 <span className="font-bold text-xl">{match.team1.name}</span>
               </div>
               
-              <div className="flex flex-col items-center px-4">
+              <div className="flex flex-col items-center mx-4">
                 <span className="text-lg font-semibold text-[#9b87f5]">VS</span>
                 {settings.showTime && (
                   <span className="text-sm mt-1 text-[#D6BCFA]">{match.time}</span>
                 )}
               </div>
 
-              <div className="flex items-center space-x-4 flex-1 justify-end">
+              <div className="flex items-center space-x-4">
                 <span className="font-bold text-xl">{match.team2.name}</span>
                 {settings.showLogos && (
                   <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
@@ -80,6 +81,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
                       alt={match.team2.name} 
                       className="w-full h-full object-contain"
                       onError={handleImageError}
+                      crossOrigin="anonymous"
                     />
                   </div>
                 )}
