@@ -4,9 +4,19 @@ import { corsHeaders } from '../_shared/cors.ts'
 
 const PANDASCORE_API_KEY = Deno.env.get('PANDASCORE_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+// Create a Supabase client with the service role key
+const supabase = createClient(
+  SUPABASE_URL!,
+  SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 interface PandaScoreMatch {
   id: number
