@@ -22,7 +22,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: string
+          id: string
           start_time: string
           team1_logo: string
           team1_name: string
