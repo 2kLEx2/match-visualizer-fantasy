@@ -31,22 +31,31 @@ export async function getUpcomingMatches(): Promise<Match[]> {
   return transformMatchesData(data);
 }
 
+function proxyImageUrl(url: string): string {
+  // Remove any query parameters from the URL
+  const baseUrl = url.split('?')[0];
+  
+  // Create a proxy URL through Supabase Functions
+  const proxyUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/proxy-image?url=${encodeURIComponent(baseUrl)}`;
+  return proxyUrl;
+}
+
 export function transformMatchesData(data: any[]): Match[] {
   return data.map(match => ({
     id: match.id,
     team1: {
       name: match.team1_name,
-      logo: match.team1_logo,
+      logo: proxyImageUrl(match.team1_logo),
     },
     team2: {
       name: match.team2_name,
-      logo: match.team2_logo,
+      logo: proxyImageUrl(match.team2_logo),
     },
     time: new Date(match.start_time).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Europe/Paris', // This sets the time to Central European Time
-      hour12: false // Use 24-hour format which is more common in Europe
+      timeZone: 'Europe/Paris',
+      hour12: false
     }),
     tournament: match.tournament,
   }));
@@ -63,7 +72,6 @@ export function subscribeToMatches(callback: (matches: Match[]) => void) {
         table: 'matches'
       },
       async () => {
-        // Fetch the latest matches when any change occurs
         const matches = await getUpcomingMatches();
         callback(matches);
       }
