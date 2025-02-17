@@ -45,7 +45,8 @@ export function transformMatchesData(data: any[]): Match[] {
     time: new Date(match.start_time).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZoneName: 'short'
+      timeZone: 'Europe/Paris', // This sets the time to Central European Time
+      hour12: false // Use 24-hour format which is more common in Europe
     }),
     tournament: match.tournament,
   }));
