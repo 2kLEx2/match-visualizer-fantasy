@@ -35,8 +35,8 @@ function proxyImageUrl(url: string): string {
   // Remove any query parameters from the URL
   const baseUrl = url.split('?')[0];
   
-  // Get the Supabase URL from the client configuration
-  const supabaseUrl = supabase.supabaseUrl;
+  // Use the hardcoded Supabase URL
+  const supabaseUrl = 'https://iwxvebibywavdrlkujmq.supabase.co';
   
   // Create a proxy URL through Supabase Functions
   const proxyUrl = `${supabaseUrl}/functions/v1/proxy-image?url=${encodeURIComponent(baseUrl)}`;
