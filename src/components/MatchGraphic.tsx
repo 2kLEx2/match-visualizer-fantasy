@@ -30,20 +30,36 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       await Promise.all(
         imagePromises.map(async ({ url, id }) => {
           try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const reader = new FileReader();
+            // Use img element to load image instead of fetch
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
             
-            return new Promise<void>((resolve) => {
-              reader.onloadend = () => {
-                loadedImagesMap[id] = reader.result as string;
+            await new Promise<void>((resolve, reject) => {
+              img.onload = () => {
+                // Create canvas to convert image to base64
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  try {
+                    loadedImagesMap[id] = canvas.toDataURL('image/png');
+                  } catch (e) {
+                    console.error('Failed to convert image to base64:', e);
+                  }
+                }
                 resolve();
               };
-              reader.readAsDataURL(blob);
+              img.onerror = () => {
+                console.error(`Failed to load image: ${url}`);
+                resolve(); // Resolve anyway to continue with other images
+              };
+              // Add timestamp to bypass cache
+              img.src = `${url}?t=${new Date().getTime()}`;
             });
           } catch (error) {
-            console.error(`Failed to load image: ${url}`, error);
-            return Promise.resolve();
+            console.error(`Failed to process image: ${url}`, error);
           }
         })
       );
