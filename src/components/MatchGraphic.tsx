@@ -68,6 +68,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     );
   };
 
+  const isBIGMatch = (match: Match) => {
+    return match.team1.name === "BIG" || match.team2.name === "BIG";
+  };
+
   return (
     <div 
       className="space-y-4 w-[600px] animate-fade-in relative"
@@ -86,50 +90,61 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         Watchparty Schedule
       </h1>
 
-      {matches.map((match) => (
-        <div 
-          key={match.id}
-          className="rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 bg-[#1B2028]/90 backdrop-blur-sm"
-        >
-          <div className="px-3 py-2 flex items-center">
-            {/* Match Time */}
-            {settings.showTime && (
-              <div className="text-base font-medium text-gray-400 w-[70px]">
-                {match.time}
+      {matches.map((match) => {
+        const isBIG = isBIGMatch(match);
+        return (
+          <div key={match.id} className="space-y-1">
+            <div 
+              className={`rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm ${
+                isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
+              }`}
+            >
+              <div className="px-3 py-2 flex items-center">
+                {/* Match Time */}
+                {settings.showTime && (
+                  <div className="text-base font-medium text-gray-400 w-[70px]">
+                    {match.time}
+                  </div>
+                )}
+
+                {/* Teams Container */}
+                <div className="flex items-center gap-8 flex-1">
+                  {/* Team 1 */}
+                  <div className="flex items-center gap-2">
+                    {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
+                    <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
+                      {match.team1.name}
+                    </span>
+                  </div>
+
+                  {/* VS Separator */}
+                  <span className="text-xs font-medium text-gray-500">
+                    vs
+                  </span>
+
+                  {/* Team 2 */}
+                  <div className="flex items-center gap-2">
+                    {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
+                    <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
+                      {match.team2.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tournament region indicator */}
+                <div className="text-xs font-medium text-gray-500 uppercase ml-2">
+                  POL
+                </div>
+              </div>
+            </div>
+            {isBIG && (
+              <div className="text-xs text-primary font-medium text-center italic">
+                Anwesenheitspflicht
               </div>
             )}
-
-            {/* Teams Container */}
-            <div className="flex items-center gap-8 flex-1">
-              {/* Team 1 */}
-              <div className="flex items-center gap-2">
-                {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
-                <span className="text-base font-medium text-white">
-                  {match.team1.name}
-                </span>
-              </div>
-
-              {/* VS Separator */}
-              <span className="text-xs font-medium text-gray-500">
-                vs
-              </span>
-
-              {/* Team 2 */}
-              <div className="flex items-center gap-2">
-                {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
-                <span className="text-base font-medium text-white">
-                  {match.team2.name}
-                </span>
-              </div>
-            </div>
-
-            {/* Tournament region indicator */}
-            <div className="text-xs font-medium text-gray-500 uppercase ml-2">
-              POL
-            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
