@@ -1,41 +1,20 @@
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
 import { GraphicCustomizer } from '@/components/GraphicCustomizer';
 import { Badge } from '@/components/ui/badge';
-
-// Mock data - replace with real API data
-const mockMatches = [
-  {
-    id: '1',
-    team1: {
-      name: 'NAVI',
-      logo: 'https://example.com/navi-logo.png',
-    },
-    team2: {
-      name: 'Vitality',
-      logo: 'https://example.com/vitality-logo.png',
-    },
-    time: '18:00 CET',
-    tournament: 'ESL Pro League',
-  },
-  {
-    id: '2',
-    team1: {
-      name: 'FaZe',
-      logo: 'https://example.com/faze-logo.png',
-    },
-    team2: {
-      name: 'G2',
-      logo: 'https://example.com/g2-logo.png',
-    },
-    time: '21:00 CET',
-    tournament: 'BLAST Premier',
-  },
-];
+import { getUpcomingMatches } from '@/lib/api/matches';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
+
+  const { data: matches, isLoading, error } = useQuery({
+    queryKey: ['matches'],
+    queryFn: getUpcomingMatches,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  });
 
   const handleMatchSelect = (matchId: string) => {
     setSelectedMatches((prev) =>
@@ -46,7 +25,6 @@ const Index = () => {
   };
 
   const handleGenerateGraphic = (settings: any) => {
-    // Implement graphic generation logic
     console.log('Generating graphic with settings:', settings);
     console.log('Selected matches:', selectedMatches);
   };
@@ -68,11 +46,26 @@ const Index = () => {
                   Next 24 Hours
                 </Badge>
               </div>
-              <MatchList
-                matches={mockMatches}
-                selectedMatches={selectedMatches}
-                onMatchSelect={handleMatchSelect}
-              />
+              
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full bg-white/5" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-red-400">Error loading matches. Please try again later.</div>
+              ) : matches && matches.length > 0 ? (
+                <MatchList
+                  matches={matches}
+                  selectedMatches={selectedMatches}
+                  onMatchSelect={handleMatchSelect}
+                />
+              ) : (
+                <div className="text-gray-400 text-center py-8">
+                  No upcoming matches in the next 24 hours
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
