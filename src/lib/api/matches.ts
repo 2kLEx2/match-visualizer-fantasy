@@ -31,28 +31,16 @@ export async function getUpcomingMatches(): Promise<Match[]> {
   return transformMatchesData(data);
 }
 
-function proxyImageUrl(url: string): string {
-  // Remove any query parameters from the URL
-  const baseUrl = url.split('?')[0];
-  
-  // Use the hardcoded Supabase URL
-  const supabaseUrl = 'https://iwxvebibywavdrlkujmq.supabase.co';
-  
-  // Create a proxy URL through Supabase Functions
-  const proxyUrl = `${supabaseUrl}/functions/v1/proxy-image?url=${encodeURIComponent(baseUrl)}`;
-  return proxyUrl;
-}
-
 export function transformMatchesData(data: any[]): Match[] {
   return data.map(match => ({
     id: match.id,
     team1: {
       name: match.team1_name,
-      logo: proxyImageUrl(match.team1_logo),
+      logo: match.team1_logo,
     },
     team2: {
       name: match.team2_name,
-      logo: proxyImageUrl(match.team2_logo),
+      logo: match.team2_logo,
     },
     time: new Date(match.start_time).toLocaleTimeString('en-US', {
       hour: '2-digit',
