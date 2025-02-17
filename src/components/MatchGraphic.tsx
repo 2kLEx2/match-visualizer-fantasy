@@ -70,7 +70,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
-      className="space-y-2 w-[600px] animate-fade-in relative"
+      className="space-y-4 w-[600px] animate-fade-in relative"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
@@ -82,6 +82,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
+      <h1 className="text-2xl font-bold text-white mb-4 text-center">
+        Watchparty Schedule
+      </h1>
+
       {matches.map((match) => (
         <div 
           key={match.id}
