@@ -24,29 +24,47 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.src = src;
       img.crossOrigin = "anonymous";
+      
       img.onload = () => {
         setLoadedImages(prev => ({ ...prev, [src]: true }));
         resolve(src);
       };
+      
       img.onerror = (error) => {
         console.error('Image load error:', error);
         setLoadedImages(prev => ({ ...prev, [src]: false }));
         reject(error);
       };
-      img.src = src;
     });
   };
 
   useEffect(() => {
-    matches.forEach(match => {
-      if (match.team1.logo) preloadImage(match.team1.logo).catch(console.error);
-      if (match.team2.logo) preloadImage(match.team2.logo).catch(console.error);
-    });
+    const loadImages = async () => {
+      for (const match of matches) {
+        if (match.team1.logo) {
+          try {
+            await preloadImage(match.team1.logo);
+          } catch (error) {
+            console.error(`Failed to load logo for ${match.team1.name}:`, error);
+          }
+        }
+        if (match.team2.logo) {
+          try {
+            await preloadImage(match.team2.logo);
+          } catch (error) {
+            console.error(`Failed to load logo for ${match.team2.name}:`, error);
+          }
+        }
+      }
+    };
+
+    loadImages();
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
-    if (!logo || !loadedImages[logo]) {
+    if (!logo || loadedImages[logo] === false) {
       return (
         <div className="w-[24px] h-[24px] flex items-center justify-center">
           <Shield className="w-5 h-5 text-gray-400" />
@@ -60,6 +78,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         alt={`${teamName} logo`}
         className="w-[24px] h-[24px] object-contain"
         crossOrigin="anonymous"
+        loading="eager"
         onError={(e) => {
           console.error(`Error loading image for ${teamName}:`, e);
           setLoadedImages(prev => ({ ...prev, [logo]: false }));
