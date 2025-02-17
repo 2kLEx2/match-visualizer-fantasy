@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 
 interface MatchGraphicProps {
@@ -14,7 +14,47 @@ interface MatchGraphicProps {
 }
 
 export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
+  const [loadedImages, setLoadedImages] = useState<{ [key: string]: string }>({});
   const scaleFactor = settings.scale / 100;
+
+  useEffect(() => {
+    // Preload all images and convert them to base64
+    const loadImages = async () => {
+      const imagePromises = matches.flatMap(match => [
+        { url: match.team1.logo, id: `${match.id}-team1` },
+        { url: match.team2.logo, id: `${match.id}-team2` }
+      ]);
+
+      const loadedImagesMap: { [key: string]: string } = {};
+
+      await Promise.all(
+        imagePromises.map(async ({ url, id }) => {
+          try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            
+            return new Promise<void>((resolve) => {
+              reader.onloadend = () => {
+                loadedImagesMap[id] = reader.result as string;
+                resolve();
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (error) {
+            console.error(`Failed to load image: ${url}`, error);
+            return Promise.resolve();
+          }
+        })
+      );
+
+      setLoadedImages(loadedImagesMap);
+    };
+
+    if (settings.showLogos && matches.length > 0) {
+      loadImages();
+    }
+  }, [matches, settings.showLogos]);
   
   return (
     <div
@@ -31,12 +71,22 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
           <div key={match.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {settings.showLogos && (
-                <img src={match.team1.logo} alt={match.team1.name} className="w-8 h-8 object-contain" />
+                <img 
+                  src={loadedImages[`${match.id}-team1`] || match.team1.logo} 
+                  alt={match.team1.name} 
+                  className="w-8 h-8 object-contain"
+                  crossOrigin="anonymous"
+                />
               )}
               <span className="font-bold text-lg">{match.team1.name}</span>
               <span className="text-lg">vs</span>
               {settings.showLogos && (
-                <img src={match.team2.logo} alt={match.team2.name} className="w-8 h-8 object-contain" />
+                <img 
+                  src={loadedImages[`${match.id}-team2`] || match.team2.logo} 
+                  alt={match.team2.name} 
+                  className="w-8 h-8 object-contain"
+                  crossOrigin="anonymous"
+                />
               )}
               <span className="font-bold text-lg">{match.team2.name}</span>
             </div>
