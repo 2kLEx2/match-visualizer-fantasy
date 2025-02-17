@@ -28,6 +28,10 @@ export async function getUpcomingMatches(): Promise<Match[]> {
     return [];
   }
 
+  return transformMatchesData(data);
+}
+
+export function transformMatchesData(data: any[]): Match[] {
   return data.map(match => ({
     id: match.id,
     team1: {
@@ -45,4 +49,23 @@ export async function getUpcomingMatches(): Promise<Match[]> {
     }),
     tournament: match.tournament,
   }));
+}
+
+export function subscribeToMatches(callback: (matches: Match[]) => void) {
+  return supabase
+    .channel('matches-channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'matches'
+      },
+      async () => {
+        // Fetch the latest matches when any change occurs
+        const matches = await getUpcomingMatches();
+        callback(matches);
+      }
+    )
+    .subscribe();
 }

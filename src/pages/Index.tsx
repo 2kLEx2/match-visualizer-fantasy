@@ -1,20 +1,40 @@
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
 import { GraphicCustomizer } from '@/components/GraphicCustomizer';
 import { Badge } from '@/components/ui/badge';
-import { getUpcomingMatches } from '@/lib/api/matches';
+import { getUpcomingMatches, subscribeToMatches } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: matches, isLoading, error } = useQuery({
+  const { data: matches, isLoading, error, refetch } = useQuery({
     queryKey: ['matches'],
     queryFn: getUpcomingMatches,
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
+
+  useEffect(() => {
+    // Subscribe to real-time updates
+    const subscription = subscribeToMatches((updatedMatches) => {
+      queryClient.setQueryData(['matches'], updatedMatches);
+      toast({
+        title: "Matches Updated",
+        description: "The matches list has been updated with the latest data.",
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [queryClient, toast]);
 
   const handleMatchSelect = (matchId: string) => {
     setSelectedMatches((prev) =>
@@ -27,6 +47,14 @@ const Index = () => {
   const handleGenerateGraphic = (settings: any) => {
     console.log('Generating graphic with settings:', settings);
     console.log('Selected matches:', selectedMatches);
+  };
+
+  const handleRefresh = async () => {
+    await refetch();
+    toast({
+      title: "Refreshing Matches",
+      description: "Fetching the latest matches data...",
+    });
   };
 
   return (
@@ -42,9 +70,20 @@ const Index = () => {
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Upcoming Matches</h2>
-                <Badge variant="outline" className="bg-primary/10 text-primary">
-                  Next 24 Hours
-                </Badge>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                  </Button>
+                  <Badge variant="outline" className="bg-primary/10 text-primary">
+                    Next 24 Hours
+                  </Badge>
+                </div>
               </div>
               
               {isLoading ? (
