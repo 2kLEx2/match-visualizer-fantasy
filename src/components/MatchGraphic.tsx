@@ -23,7 +23,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     const iconContainer = imgElement.parentElement;
     if (iconContainer) {
       const iconDiv = document.createElement('div');
-      iconDiv.className = 'w-10 h-10 flex items-center justify-center bg-white/10 rounded-full';
+      iconDiv.className = 'w-10 h-10 flex items-center justify-center bg-[#9b87f5]/10 rounded-full';
       iconDiv.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>`;
       iconContainer.appendChild(iconDiv);
     }
@@ -37,22 +37,22 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         color: settings.textColor,
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        background: `linear-gradient(to right, ${settings.backgroundColor}, ${settings.backgroundColor}ee)`,
+        background: `linear-gradient(to right, ${settings.backgroundColor}, #9b87f5)`,
       }}
     >
       <div className="p-8 space-y-6">
-        <div className="text-lg font-bold text-center mb-6 opacity-80">
+        <div className="text-xl font-bold text-center mb-6 opacity-90 bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#7E69AB]">
           {matches[0]?.tournament}
         </div>
         {matches.map((match) => (
           <div 
             key={match.id} 
-            className="flex items-center justify-between p-4 rounded-lg backdrop-blur-sm bg-black/10 hover:bg-black/20 transition-all"
+            className="flex items-center justify-between p-4 rounded-lg backdrop-blur-sm bg-[#1A1F2C]/40 hover:bg-[#1A1F2C]/60 transition-all border border-[#9b87f5]/20"
           >
             <div className="flex items-center space-x-6 flex-1">
               <div className="flex items-center space-x-4 flex-1">
                 {settings.showLogos && (
-                  <div className="w-12 h-12 relative bg-white/5 rounded-full p-2 backdrop-blur-sm">
+                  <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
                     <img 
                       src={match.team1.logo}
                       alt={match.team1.name} 
@@ -65,16 +65,16 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               </div>
               
               <div className="flex flex-col items-center px-4">
-                <span className="text-lg font-semibold opacity-60">VS</span>
+                <span className="text-lg font-semibold text-[#9b87f5]">VS</span>
                 {settings.showTime && (
-                  <span className="text-sm mt-1 opacity-50">{match.time}</span>
+                  <span className="text-sm mt-1 text-[#D6BCFA]">{match.time}</span>
                 )}
               </div>
 
               <div className="flex items-center space-x-4 flex-1 justify-end">
                 <span className="font-bold text-xl">{match.team2.name}</span>
                 {settings.showLogos && (
-                  <div className="w-12 h-12 relative bg-white/5 rounded-full p-2 backdrop-blur-sm">
+                  <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
                     <img 
                       src={match.team2.logo}
                       alt={match.team2.name} 
