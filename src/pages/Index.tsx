@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { getUpcomingMatches, subscribeToMatches } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sync } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase/client';
 
 const Index = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -57,6 +59,31 @@ const Index = () => {
     });
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-matches');
+      
+      if (error) throw error;
+      
+      await refetch(); // Refresh the matches list after sync
+      
+      toast({
+        title: "Sync Successful",
+        description: `Successfully synced ${data?.matchesSync || 0} matches`,
+      });
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync matches. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       <div className="container py-8 px-4 mx-auto">
@@ -71,6 +98,16 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Upcoming Matches</h2>
                 <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="flex items-center gap-2"
+                  >
+                    <Sync className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync Matches'}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
