@@ -70,16 +70,22 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
-      className="space-y-2 w-[600px] animate-fade-in"
+      className="space-y-2 w-[600px] animate-fade-in relative"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
+        backgroundImage: 'url(https://static-cdn.jtvnw.net/jtv_user_pictures/60c2e503-6d45-4e92-980a-5ff326c2ffc0-channel_offline_image-1920x1080.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '20px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
       {matches.map((match) => (
         <div 
           key={match.id}
-          className="rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 bg-[#1B2028]"
+          className="rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 bg-[#1B2028]/90 backdrop-blur-sm"
         >
           <div className="px-3 py-2 flex items-center">
             {/* Match Time */}
