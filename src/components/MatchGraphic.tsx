@@ -19,7 +19,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const preloadImage = (src: string) => {
-    return new Promise((resolve, reject) => {
+    if (!src) return Promise.reject(new Error('No image source provided'));
+    if (loadedImages[src] !== undefined) return Promise.resolve(src);
+
+    return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
@@ -27,34 +30,45 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         resolve(src);
       };
       img.onerror = () => {
+        // Silently handle the error and mark the image as failed
         setLoadedImages(prev => ({ ...prev, [src]: false }));
-        reject(new Error(`Failed to load image: ${src}`));
+        resolve(src); // Resolve anyway to prevent error propagation
       };
       img.src = src;
     });
   };
 
   useEffect(() => {
-    // Preload all team logos
-    matches.forEach(match => {
-      if (match.team1.logo) preloadImage(match.team1.logo);
-      if (match.team2.logo) preloadImage(match.team2.logo);
-    });
+    const loadImages = async () => {
+      const imagePromises = matches.flatMap(match => [
+        match.team1.logo && preloadImage(match.team1.logo),
+        match.team2.logo && preloadImage(match.team2.logo),
+      ]).filter(Boolean);
+
+      // Wait for all images to either load or fail silently
+      await Promise.all(imagePromises).catch(() => {
+        // Ignore any errors since we handle them in preloadImage
+      });
+    };
+
+    loadImages();
   }, [matches]);
 
-  const renderLogo = (logo: string, teamName: string) => {
-    if (!loadedImages[logo]) {
+  const renderLogo = (logo: string | undefined, teamName: string) => {
+    // Show fallback if no logo or if logo failed to load
+    if (!logo || !loadedImages[logo]) {
       return (
-        <div className="w-10 h-10 flex items-center justify-center bg-[#9b87f5]/10 rounded-full">
-          <Shield className="w-5 h-5 text-[#9b87f5]" />
+        <div className="w-10 h-10 flex items-center justify-center">
+          <Shield className="w-6 h-6 text-[#9b87f5]" />
         </div>
       );
     }
 
+    // Show logo if it loaded successfully
     return (
       <img 
         src={logo}
-        alt={teamName} 
+        alt={`${teamName} logo`}
         className="w-full h-full object-contain"
         crossOrigin="anonymous"
       />
