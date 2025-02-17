@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
-import { Shield, Clock } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -48,8 +48,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const renderLogo = (logo: string | undefined, teamName: string) => {
     if (!logo || !loadedImages[logo]) {
       return (
-        <div className="w-[32px] h-[32px] flex items-center justify-center">
-          <Shield className="w-6 h-6 text-gray-400" />
+        <div className="w-[24px] h-[24px] flex items-center justify-center">
+          <Shield className="w-5 h-5 text-gray-400" />
         </div>
       );
     }
@@ -58,7 +58,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       <img 
         src={logo}
         alt={`${teamName} logo`}
-        className="w-[32px] h-[32px] object-contain"
+        className="w-[24px] h-[24px] object-contain"
         crossOrigin="anonymous"
         onError={(e) => {
           console.error(`Error loading image for ${teamName}:`, e);
@@ -70,7 +70,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
-      className="space-y-4 w-[800px] animate-fade-in"
+      className="space-y-2 w-[600px] animate-fade-in"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
@@ -79,51 +79,43 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       {matches.map((match) => (
         <div 
           key={match.id}
-          className="rounded-lg overflow-hidden transition-all duration-300 hover:bg-slate-800/50"
-          style={{
-            background: 'linear-gradient(to right, #1a1a1a, #2d2d2d)',
-          }}
+          className="rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 bg-[#1B2028]"
         >
-          <div className="p-4 flex items-center gap-6">
+          <div className="px-3 py-2 flex items-center">
             {/* Match Time */}
             {settings.showTime && (
-              <div className="flex items-center gap-2 min-w-[100px]">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-lg font-medium text-white">
-                  {match.time}
-                </span>
+              <div className="text-base font-medium text-gray-400 w-[70px]">
+                {match.time}
               </div>
             )}
 
             {/* Teams Container */}
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-8 flex-1">
               {/* Team 1 */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
-                <span className="text-lg font-medium text-white">
+                <span className="text-base font-medium text-white">
                   {match.team1.name}
                 </span>
               </div>
 
               {/* VS Separator */}
-              <span className="text-sm font-medium text-gray-500 px-2">
+              <span className="text-xs font-medium text-gray-500">
                 vs
               </span>
 
               {/* Team 2 */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
-                <span className="text-lg font-medium text-white">
+                <span className="text-base font-medium text-white">
                   {match.team2.name}
                 </span>
               </div>
             </div>
 
-            {/* Tournament Name (Optional) */}
-            <div className="min-w-[200px] text-right">
-              <span className="text-sm font-medium text-gray-400">
-                {match.tournament}
-              </span>
+            {/* Tournament region indicator */}
+            <div className="text-xs font-medium text-gray-500 uppercase ml-2">
+              POL
             </div>
           </div>
         </div>
