@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
 import { GraphicCustomizer } from '@/components/GraphicCustomizer';
 import { Badge } from '@/components/ui/badge';
-import { getUpcomingMatches, subscribeToMatches } from '@/lib/api/matches';
+import { getUpcomingMatches, subscribeToMatches, Match } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, RefreshCcw } from 'lucide-react';
@@ -46,11 +46,6 @@ const Index = () => {
     );
   };
 
-  const handleGenerateGraphic = (settings: any) => {
-    console.log('Generating graphic with settings:', settings);
-    console.log('Selected matches:', selectedMatches);
-  };
-
   const handleRefresh = async () => {
     await refetch();
     toast({
@@ -66,7 +61,7 @@ const Index = () => {
       
       if (error) throw error;
       
-      await refetch(); // Refresh the matches list after sync
+      await refetch();
       
       toast({
         title: "Sync Successful",
@@ -83,6 +78,11 @@ const Index = () => {
       setIsSyncing(false);
     }
   };
+
+  // Convert selected match IDs to actual Match objects
+  const selectedMatchObjects = matches?.filter(match => 
+    selectedMatches.includes(match.id)
+  ) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -147,8 +147,7 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Customize Graphic</h2>
               <GraphicCustomizer
-                selectedMatches={selectedMatches}
-                onGenerateGraphic={handleGenerateGraphic}
+                selectedMatches={selectedMatchObjects}
               />
             </div>
           </div>
