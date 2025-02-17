@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { getUpcomingMatches, subscribeToMatches } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Sync } from 'lucide-react';
+import { RefreshCw, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase/client';
 
@@ -105,7 +105,7 @@ const Index = () => {
                     disabled={isSyncing}
                     className="flex items-center gap-2"
                   >
-                    <Sync className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                     {isSyncing ? 'Syncing...' : 'Sync Matches'}
                   </Button>
                   <Button
