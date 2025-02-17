@@ -29,12 +29,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Fetching matches from PandaScore...')
+    console.log('Starting sync process...')
     
     // Get current date in ISO format for the range parameter
     const now = new Date()
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
     const range = `begin_at=timestamp,${now.toISOString()},${tomorrow.toISOString()}`
+    
+    console.log(`Fetching matches from PandaScore for range: ${range}`)
     
     // Fetch upcoming CS:GO matches with improved parameters
     const response = await fetch(
@@ -47,7 +49,9 @@ Deno.serve(async (req) => {
     )
 
     if (!response.ok) {
-      throw new Error(`PandaScore API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`PandaScore API error: ${response.status}`, errorText)
+      throw new Error(`PandaScore API error: ${response.status} - ${errorText}`)
     }
 
     const matches: PandaScoreMatch[] = await response.json()
@@ -55,12 +59,17 @@ Deno.serve(async (req) => {
 
     // Transform matches with better filtering
     const relevantMatches = matches
-      .filter(match => 
-        match.opponents && 
-        match.opponents.length >= 2 &&
-        match.opponents[0]?.opponent &&
-        match.opponents[1]?.opponent
-      )
+      .filter(match => {
+        const hasOpponents = match.opponents && 
+          match.opponents.length >= 2 &&
+          match.opponents[0]?.opponent &&
+          match.opponents[1]?.opponent
+        
+        if (!hasOpponents) {
+          console.log(`Skipping match ${match.id} due to missing opponents`)
+        }
+        return hasOpponents
+      })
       .map(match => ({
         id: match.id.toString(),
         start_time: match.begin_at,
@@ -71,25 +80,35 @@ Deno.serve(async (req) => {
         tournament: match.league.name
       }))
 
-    console.log(`Syncing ${relevantMatches.length} matches to database`)
+    console.log(`Processing ${relevantMatches.length} relevant matches`)
 
     // Clean up old matches
-    await supabase
+    const { error: deleteError } = await supabase
       .from('matches')
       .delete()
       .lt('start_time', new Date().toISOString())
 
+    if (deleteError) {
+      console.error('Error cleaning up old matches:', deleteError)
+      throw deleteError
+    }
+
     if (relevantMatches.length > 0) {
       // Upsert new matches
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from('matches')
         .upsert(relevantMatches, {
           onConflict: 'id'
         })
 
-      if (error) {
-        throw error
+      if (upsertError) {
+        console.error('Error upserting matches:', upsertError)
+        throw upsertError
       }
+
+      console.log(`Successfully synced ${relevantMatches.length} matches`)
+    } else {
+      console.log('No matches to sync')
     }
 
     return new Response(
