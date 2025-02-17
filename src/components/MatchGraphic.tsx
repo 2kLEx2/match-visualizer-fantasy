@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
 
@@ -16,17 +16,49 @@ interface MatchGraphicProps {
 
 export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    const imgElement = e.currentTarget;
-    imgElement.style.display = 'none';
-    const iconContainer = imgElement.parentElement;
-    if (iconContainer) {
-      const iconDiv = document.createElement('div');
-      iconDiv.className = 'w-10 h-10 flex items-center justify-center bg-[#9b87f5]/10 rounded-full';
-      iconDiv.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>`;
-      iconContainer.appendChild(iconDiv);
+  const preloadImage = (src: string) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        setLoadedImages(prev => ({ ...prev, [src]: true }));
+        resolve(src);
+      };
+      img.onerror = () => {
+        setLoadedImages(prev => ({ ...prev, [src]: false }));
+        reject(new Error(`Failed to load image: ${src}`));
+      };
+      img.src = src;
+    });
+  };
+
+  useEffect(() => {
+    // Preload all team logos
+    matches.forEach(match => {
+      if (match.team1.logo) preloadImage(match.team1.logo);
+      if (match.team2.logo) preloadImage(match.team2.logo);
+    });
+  }, [matches]);
+
+  const renderLogo = (logo: string, teamName: string) => {
+    if (!loadedImages[logo]) {
+      return (
+        <div className="w-10 h-10 flex items-center justify-center bg-[#9b87f5]/10 rounded-full">
+          <Shield className="w-5 h-5 text-[#9b87f5]" />
+        </div>
+      );
     }
+
+    return (
+      <img 
+        src={logo}
+        alt={teamName} 
+        className="w-full h-full object-contain"
+        crossOrigin="anonymous"
+      />
+    );
   };
 
   return (
@@ -53,13 +85,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               <div className="flex items-center space-x-4">
                 {settings.showLogos && (
                   <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
-                    <img 
-                      src={match.team1.logo}
-                      alt={match.team1.name} 
-                      className="w-full h-full object-contain"
-                      onError={handleImageError}
-                      crossOrigin="anonymous"
-                    />
+                    {renderLogo(match.team1.logo, match.team1.name)}
                   </div>
                 )}
                 <span className="font-bold text-xl">{match.team1.name}</span>
@@ -76,13 +102,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
                 <span className="font-bold text-xl">{match.team2.name}</span>
                 {settings.showLogos && (
                   <div className="w-12 h-12 relative bg-[#9b87f5]/10 rounded-full p-2 backdrop-blur-sm border border-[#9b87f5]/20">
-                    <img 
-                      src={match.team2.logo}
-                      alt={match.team2.name} 
-                      className="w-full h-full object-contain"
-                      onError={handleImageError}
-                      crossOrigin="anonymous"
-                    />
+                    {renderLogo(match.team2.logo, match.team2.name)}
                   </div>
                 )}
               </div>
