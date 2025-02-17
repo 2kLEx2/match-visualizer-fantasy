@@ -34,11 +34,11 @@ export const MatchList = ({ matches, selectedMatches, onMatchSelect }: MatchList
     return acc;
   }, {} as Record<string, Match[]>);
 
-  // Track expanded state for each tournament
+  // Track expanded state for each tournament - initialize all to false (collapsed)
   const [expandedTournaments, setExpandedTournaments] = useState<Record<string, boolean>>(() => {
-    // Initially expand all tournaments
+    // Initially collapse all tournaments
     return Object.keys(matchesByTournament).reduce((acc, tournament) => {
-      acc[tournament] = true;
+      acc[tournament] = false;
       return acc;
     }, {} as Record<string, boolean>);
   });
