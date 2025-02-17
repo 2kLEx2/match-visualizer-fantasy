@@ -42,6 +42,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     matches.forEach(match => {
       if (match.team1.logo) preloadImage(match.team1.logo).catch(console.error);
       if (match.team2.logo) preloadImage(match.team2.logo).catch(console.error);
+      if (match.tournament_logo) preloadImage(match.tournament_logo).catch(console.error);
     });
   }, [matches]);
 
@@ -69,7 +70,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   };
 
   return (
-    <div className="space-y-6 w-[1066px] animate-fade-in"
+    <div 
+      className="space-y-6 w-[1066px] animate-fade-in"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
@@ -78,7 +80,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       {matches.map((match) => (
         <div 
           key={match.id}
-          className="rounded-lg overflow-hidden shadow-lg"
+          className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl"
           style={{
             background: 'linear-gradient(to bottom, #959595, #3b3b3b)',
           }}
@@ -86,13 +88,13 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
           <div className="p-6 grid grid-cols-[auto_1fr_auto] gap-5 items-center">
             {/* Match Time */}
             {settings.showTime && (
-              <div className="text-3xl font-bold text-black">
+              <div className="text-3xl font-bold text-black min-w-[100px] text-center">
                 {match.time}
               </div>
             )}
 
             {/* Teams */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 min-w-[400px]">
               {/* Team 1 */}
               <div className="flex items-center gap-[50px]">
                 {settings.showLogos && (
@@ -122,13 +124,13 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
             </div>
 
             {/* Tournament Section */}
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-5 min-w-[400px]">
               {/* Tournament Logo Container */}
               <div className="w-[200px] flex items-center justify-center">
                 <img 
                   src={match.tournament_logo || '/placeholder.svg'}
                   alt={`${match.tournament} logo`}
-                  className="w-[78px] h-[78px] object-contain"
+                  className="w-[78px] h-[78px] object-contain rounded-lg"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/placeholder.svg';

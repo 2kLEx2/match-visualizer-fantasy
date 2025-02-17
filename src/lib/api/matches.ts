@@ -13,6 +13,7 @@ export interface Match {
   };
   time: string;
   tournament: string;
+  tournament_logo?: string;
 }
 
 export async function getUpcomingMatches(): Promise<Match[]> {
@@ -49,6 +50,7 @@ export function transformMatchesData(data: any[]): Match[] {
       hour12: false
     }),
     tournament: match.tournament,
+    tournament_logo: match.tournament_logo,
   }));
 }
 
