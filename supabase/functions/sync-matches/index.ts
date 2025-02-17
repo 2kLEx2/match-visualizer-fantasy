@@ -12,6 +12,7 @@ interface PandaScoreMatch {
   name: string
   league: {
     name: string
+    image_url?: string
   }
   opponents: Array<{
     opponent: {
@@ -45,20 +46,32 @@ Deno.serve(async (req) => {
 
     console.log('Starting sync process...')
     
-    // Get current date in ISO format for the range parameter
+    // Get current date and tomorrow's date
     const now = new Date()
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    const range = `begin_at=timestamp,${now.toISOString()},${tomorrow.toISOString()}`
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(23, 59, 59, 999)
+
+    // Format dates for PandaScore API
+    const fromDate = now.toISOString().split('.')[0] + 'Z'
+    const toDate = tomorrow.toISOString().split('.')[0] + 'Z'
     
-    console.log(`Fetching matches from PandaScore for range: ${range}`)
+    console.log(`Fetching matches from: ${fromDate} to: ${toDate}`)
     
     if (!PANDASCORE_API_KEY) {
       throw new Error('PANDASCORE_API_KEY is not set')
     }
 
+    // Construct the URL with proper date range parameters
+    const url = new URL('https://api.pandascore.co/csgo/matches/upcoming')
+    url.searchParams.append('range[begin_at]', `${fromDate},${toDate}`)
+    url.searchParams.append('sort', 'begin_at')
+    url.searchParams.append('per_page', '50')
+    url.searchParams.append('filter[status]', 'not_started')
+
     // Fetch upcoming CS:GO matches
     const response = await fetch(
-      `https://api.pandascore.co/csgo/matches/upcoming?${range}&sort=begin_at&per_page=50&status=not_started`,
+      url.toString(),
       {
         headers: {
           'Authorization': `Bearer ${PANDASCORE_API_KEY}`,
@@ -95,7 +108,8 @@ Deno.serve(async (req) => {
         team1_logo: match.opponents[0]?.opponent.image_url || '/placeholder.svg',
         team2_name: match.opponents[1]?.opponent.name || 'TBD',
         team2_logo: match.opponents[1]?.opponent.image_url || '/placeholder.svg',
-        tournament: match.league.name
+        tournament: match.league.name,
+        tournament_logo: match.league.image_url || '/placeholder.svg'
       }))
 
     console.log(`Processing ${relevantMatches.length} relevant matches`)
