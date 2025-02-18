@@ -50,36 +50,45 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   return (
     <div 
       data-graphic="true"
-      className="space-y-4 w-[600px] animate-fade-in relative"
+      className="relative overflow-hidden"
       style={{
+        width: '600px',
+        minHeight: '400px',
+        maxHeight: '800px',
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        backgroundColor: '#1a1b1e',
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`,
-        backgroundPosition: 'top center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        minHeight: '100%',
-        padding: '20px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
-      <h1 className="text-2xl font-bold text-white mb-4 text-right pr-4">
-        Watchparty Schedule
-      </h1>
+      <div 
+        className="w-full h-full p-6"
+        style={{
+          backgroundColor: '#1a1b1e',
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`,
+          backgroundPosition: 'top center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <h1 className="text-2xl font-bold text-white mb-6 text-right pr-4">
+          Watchparty Schedule
+        </h1>
 
-      {matches.map((match) => (
-        <MatchRow
-          key={match.id}
-          match={match}
-          isBIG={isBIGMatch(match)}
-          showTime={settings.showTime}
-          showLogos={settings.showLogos}
-          loadedImages={loadedImages}
-          loadingStates={loadingStates}
-        />
-      ))}
+        <div className="space-y-4">
+          {matches.map((match) => (
+            <MatchRow
+              key={match.id}
+              match={match}
+              isBIG={isBIGMatch(match)}
+              showTime={settings.showTime}
+              showLogos={settings.showLogos}
+              loadedImages={loadedImages}
+              loadingStates={loadingStates}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

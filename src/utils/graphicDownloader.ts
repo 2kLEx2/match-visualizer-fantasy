@@ -15,6 +15,10 @@ export const downloadGraphic = async (
       backgroundColor: null,
       scale: 2, // Higher quality
       logging: true,
+      width: 600, // Fixed width
+      height: graphicRef.offsetHeight, // Dynamic height based on content
+      windowWidth: 600, // Ensure consistent rendering
+      useCORS: true, // Enable cross-origin image loading
     });
 
     // Convert canvas to base64 PNG
