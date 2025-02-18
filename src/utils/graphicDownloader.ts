@@ -16,12 +16,13 @@ export const downloadGraphic = async (
       Array.from(images).map(async (img) => {
         if (img.src.startsWith('https://cdn.pandascore.co')) {
           // Use Supabase Edge Function as proxy with API key
-          const proxyUrl = `${supabase.functions.url}/proxy-image?url=${encodeURIComponent(img.src)}`;
+          const proxyUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/proxy-image?url=${encodeURIComponent(img.src)}`;
           img.crossOrigin = 'anonymous';
+          const { data: { session } } = await supabase.auth.getSession();
           const response = await fetch(proxyUrl, {
             headers: {
-              'Authorization': `Bearer ${supabase.auth.session()?.access_token}`,
-              'apikey': process.env.SUPABASE_ANON_KEY || '',
+              'Authorization': `Bearer ${session?.access_token}`,
+              'apikey': process.env.VITE_SUPABASE_ANON_KEY || '',
             }
           });
           if (response.ok) {
