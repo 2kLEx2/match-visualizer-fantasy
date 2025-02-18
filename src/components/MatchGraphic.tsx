@@ -49,6 +49,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
+      data-graphic="true"
       className="space-y-4 w-[600px] animate-fade-in relative"
       style={{
         transform: `scale(${scaleFactor})`,
