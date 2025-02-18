@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { chromium } from "https://deno.land/x/playwright@0.290.0/mod.ts"
+import * as puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,15 +16,14 @@ serve(async (req) => {
     const { html, css } = await req.json()
 
     // Launch browser
-    const browser = await chromium.launch({
+    const browser = await puppeteer.launch({
       args: ['--no-sandbox']
     })
     
-    const context = await browser.newContext()
-    const page = await context.newPage()
+    const page = await browser.newPage()
 
     // Set viewport
-    await page.setViewportSize({
+    await page.setViewport({
       width: 600,
       height: 800
     })
@@ -42,7 +41,7 @@ serve(async (req) => {
     `)
 
     // Wait for network activity to settle
-    await page.waitForLoadState('networkidle')
+    await page.waitForNetworkIdle()
 
     // Take screenshot
     const screenshot = await page.screenshot({
