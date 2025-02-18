@@ -3,6 +3,23 @@ import { Match } from '@/lib/api/matches';
 import { supabase } from '@/lib/supabase/client';
 import html2canvas from 'html2canvas';
 
+const preloadImages = async (matches: Match[]): Promise<void> => {
+  const imageUrls = matches.flatMap(match => [match.team1.logo, match.team2.logo]).filter(Boolean);
+  
+  await Promise.all(
+    imageUrls.map(url => {
+      if (!url) return Promise.resolve();
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // Enable CORS
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // Continue even if image fails
+        img.src = url;
+      });
+    })
+  );
+};
+
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
   matches: Match[],
@@ -10,7 +27,13 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // First, capture the HTML element as a canvas
+    // Preload all team logos
+    await preloadImages(matches);
+
+    // Add a small delay to ensure images are rendered
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Capture the HTML element as a canvas
     const canvas = await html2canvas(graphicRef, {
       backgroundColor: null,
       scale: 2, // Higher quality
@@ -19,6 +42,14 @@ export const downloadGraphic = async (
       height: graphicRef.offsetHeight, // Dynamic height based on content
       windowWidth: 600, // Ensure consistent rendering
       useCORS: true, // Enable cross-origin image loading
+      allowTaint: true,
+      onclone: (clonedDoc) => {
+        // Force all images in the cloned document to have crossOrigin set
+        const images = clonedDoc.getElementsByTagName('img');
+        for (let img of images) {
+          img.crossOrigin = "anonymous";
+        }
+      }
     });
 
     // Convert canvas to base64 PNG

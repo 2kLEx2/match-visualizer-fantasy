@@ -31,6 +31,7 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
       src={logo}
       alt={`${teamName} logo`}
       className="w-[24px] h-[24px] object-contain"
+      crossOrigin="anonymous"
     />
   );
 };
