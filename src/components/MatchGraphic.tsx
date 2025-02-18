@@ -53,7 +53,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        background: `url(/lovable-uploads/96a04188-0b52-48a9-aeab-62eb8135d21d.png) top center no-repeat`,
+        background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://xvfxaxodgtfzujrqzlqd.supabase.co/storage/v1/object/public/match-graphics/96a04188-0b52-48a9-aeab-62eb8135d21d.png) top center no-repeat`,
         backgroundSize: 'cover',
         minHeight: '100%',
         padding: '20px',
