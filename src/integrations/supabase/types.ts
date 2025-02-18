@@ -19,6 +19,7 @@ export type Database = {
           team2_logo: string
           team2_name: string
           tournament: string
+          tournament_logo: string | null
         }
         Insert: {
           created_at?: string
@@ -29,6 +30,7 @@ export type Database = {
           team2_logo: string
           team2_name: string
           tournament: string
+          tournament_logo?: string | null
         }
         Update: {
           created_at?: string
@@ -39,6 +41,7 @@ export type Database = {
           team2_logo?: string
           team2_name?: string
           tournament?: string
+          tournament_logo?: string | null
         }
         Relationships: []
       }
