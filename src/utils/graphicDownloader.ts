@@ -1,6 +1,7 @@
 
 import { Match } from '@/lib/api/matches';
 import domtoimage from 'dom-to-image';
+import { supabase } from '@/lib/supabase/client';
 
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
@@ -14,10 +15,19 @@ export const downloadGraphic = async (
     await Promise.all(
       Array.from(images).map(async (img) => {
         if (img.src.startsWith('https://cdn.pandascore.co')) {
-          // Use Supabase Edge Function as proxy
-          const proxyUrl = `/functions/v1/proxy-image?url=${encodeURIComponent(img.src)}`;
+          // Use Supabase Edge Function as proxy with API key
+          const proxyUrl = `${supabase.functions.url}/proxy-image?url=${encodeURIComponent(img.src)}`;
           img.crossOrigin = 'anonymous';
-          img.src = proxyUrl;
+          const response = await fetch(proxyUrl, {
+            headers: {
+              'Authorization': `Bearer ${supabase.auth.session()?.access_token}`,
+              'apikey': process.env.SUPABASE_ANON_KEY || '',
+            }
+          });
+          if (response.ok) {
+            const blob = await response.blob();
+            img.src = URL.createObjectURL(blob);
+          }
         }
       })
     );

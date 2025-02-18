@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -18,6 +18,23 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url).searchParams.get('url');
+    const apiKey = req.headers.get('apikey');
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing API key',
+          hint: 'Make sure to include the Supabase API key in the request headers'
+        }), 
+        { 
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+    }
 
     if (!url) {
       return new Response(
