@@ -112,14 +112,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Convert canvas to PNG buffer
+    // Convert canvas to PNG buffer and encode as base64
     const pngData = canvas.toBuffer('image/png');
+    const base64Data = btoa(String.fromCharCode(...new Uint8Array(pngData)));
 
-    return new Response(pngData, {
+    // Return base64 encoded string
+    return new Response(JSON.stringify({ image: base64Data }), {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'image/png',
-        'Content-Length': pngData.length.toString(),
+        'Content-Type': 'application/json',
       },
     });
   } catch (error) {

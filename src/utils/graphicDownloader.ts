@@ -21,9 +21,10 @@ export const downloadGraphic = async (
     });
 
     if (error) throw error;
+    if (!data?.image) throw new Error('No image data received');
 
-    // Convert the base64 response to a blob
-    const response = await fetch(`data:image/png;base64,${data}`);
+    // Create blob from base64 data
+    const response = await fetch(`data:image/png;base64,${data.image}`);
     const blob = await response.blob();
 
     // Create download link
