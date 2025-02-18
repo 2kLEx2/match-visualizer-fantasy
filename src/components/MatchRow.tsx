@@ -37,22 +37,26 @@ export const MatchRow = ({
           )}
 
           <div className="flex items-center gap-8 flex-1">
-            <div className="flex items-center gap-2">
-              {showLogos && !isCustomEntry && (
-                <TeamLogo 
-                  logo={match.team1.logo}
-                  teamName={match.team1.name}
-                  isLoading={loadingStates[match.team1.logo || '']}
-                  isLoaded={loadedImages[match.team1.logo || '']}
-                />
-              )}
+            {isCustomEntry ? (
               <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
                 {match.team1.name}
               </span>
-            </div>
-
-            {!isCustomEntry && (
+            ) : (
               <>
+                <div className="flex items-center gap-2">
+                  {showLogos && (
+                    <TeamLogo 
+                      logo={match.team1.logo}
+                      teamName={match.team1.name}
+                      isLoading={loadingStates[match.team1.logo || '']}
+                      isLoaded={loadedImages[match.team1.logo || '']}
+                    />
+                  )}
+                  <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
+                    {match.team1.name}
+                  </span>
+                </div>
+
                 <span className="text-xs font-medium text-gray-500">
                   vs
                 </span>

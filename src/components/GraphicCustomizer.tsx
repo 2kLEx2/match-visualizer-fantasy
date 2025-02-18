@@ -200,7 +200,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           <MatchGraphic
             matches={allMatches}
             settings={{
-              showLogos: false,
+              showLogos: true, // Set back to true to show logos for selected matches
               showTime: true,
               backgroundColor: '#1a1a1a',
               textColor: '#ffffff',
