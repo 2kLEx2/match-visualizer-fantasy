@@ -10,41 +10,51 @@ export const downloadGraphic = async (
   try {
     const html2canvas = (await import('html2canvas')).default;
     
-    // Create a wrapper div with solid background
+    // Create a wrapper with absolute positioning
     const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
+    wrapper.style.left = '0';
+    wrapper.style.zIndex = '-1000';
     wrapper.style.backgroundColor = '#1a1b1e';
-    wrapper.style.padding = '20px';
-    wrapper.style.width = 'fit-content';
+    wrapper.style.width = `${graphicRef.offsetWidth}px`;
+    wrapper.style.height = `${graphicRef.offsetHeight}px`;
     
     // Clone the graphic element
     const clone = graphicRef.cloneNode(true) as HTMLElement;
-    
-    // Ensure the clone maintains all the styling
-    const computedStyle = window.getComputedStyle(graphicRef);
-    clone.style.cssText = computedStyle.cssText;
+    clone.style.transform = 'none'; // Remove any scaling
+    clone.style.width = `${graphicRef.offsetWidth}px`;
+    clone.style.height = `${graphicRef.offsetHeight}px`;
     clone.style.backgroundColor = '#1a1b1e';
-    clone.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`;
-    clone.style.transform = 'none'; // Remove scaling for capture
+    clone.style.position = 'relative';
     
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
+    // Wait a bit for background image to load
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     const canvas = await html2canvas(wrapper, {
       backgroundColor: '#1a1b1e',
       scale: 2,
-      logging: true, // Enable logging to debug
       useCORS: true,
       allowTaint: true,
-      removeContainer: true,
-      foreignObjectRendering: true,
+      logging: true,
       width: graphicRef.offsetWidth,
-      height: graphicRef.offsetHeight
+      height: graphicRef.offsetHeight,
+      onclone: (document, element) => {
+        const targetElement = element.querySelector('[data-graphic="true"]') as HTMLElement;
+        if (targetElement) {
+          targetElement.style.backgroundColor = '#1a1b1e';
+          targetElement.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`;
+        }
+      }
     });
 
-    // Cleanup the wrapper
+    // Cleanup
     document.body.removeChild(wrapper);
 
-    // Convert to blob
+    // Convert to blob with maximum quality
     const blob = await new Promise<Blob>((resolve) => {
       canvas.toBlob((blob) => {
         resolve(blob!);
