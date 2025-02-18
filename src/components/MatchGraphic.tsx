@@ -49,17 +49,20 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   return (
     <div 
-      className="space-y-4 w-[600px] animate-fade-in relative bg-white"
+      className="space-y-4 w-[600px] animate-fade-in relative"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
+        background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png) top center no-repeat`,
+        backgroundColor: '#1a1b1e',
+        backgroundSize: 'cover',
         minHeight: '100%',
         padding: '20px',
         borderRadius: '12px',
-        color: settings.textColor,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
-      <h1 className="text-2xl font-bold mb-4 text-right pr-4">
+      <h1 className="text-2xl font-bold text-white mb-4 text-right pr-4">
         Watchparty Schedule
       </h1>
 
