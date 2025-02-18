@@ -8,8 +8,8 @@ const preloadImages = async (matches: Match[]): Promise<void> => {
   
   await Promise.all(
     imageUrls.map(url => {
-      if (!url) return Promise.resolve();
-      return new Promise((resolve) => {
+      if (!url) return Promise.resolve<void>(undefined);
+      return new Promise<void>((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous"; // Enable CORS
         img.onload = () => resolve();
