@@ -32,28 +32,30 @@ serve(async (req) => {
       )
     }
 
-    console.log('Proxying image:', url)
+    // Fetch the image
+    const imageResponse = await fetch(url);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+    }
 
-    // Instead of fetching and returning the image directly,
-    // we'll return a signed URL that can be used to display the image
-    return new Response(
-      JSON.stringify({ 
-        url,
-        success: true
-      }),
-      { 
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+    // Get the image data
+    const imageData = await imageResponse.arrayBuffer();
+    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+
+    // Return the image directly with proper headers
+    return new Response(imageData, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=3600'
       }
-    )
+    });
+    
   } catch (error) {
-    console.error('Proxy error:', error)
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.toString() 
+        success: false
       }),
       { 
         status: 500,
