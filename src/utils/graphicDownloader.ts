@@ -10,7 +10,7 @@ export const downloadGraphic = async (
 ) => {
   try {
     // Wait for a small delay to ensure the DOM is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Create canvas with proper settings
     const canvas = await html2canvas(graphicRef, {
@@ -23,6 +23,12 @@ export const downloadGraphic = async (
       imageTimeout: 15000,
       width: 600,
       height: graphicRef.offsetHeight,
+      onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.body.querySelector('[data-html2canvas-ignore]');
+        if (clonedElement) {
+          clonedElement.remove();
+        }
+      }
     });
 
     // Convert to PNG
