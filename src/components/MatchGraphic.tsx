@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
@@ -29,10 +28,9 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       });
 
       if (error) throw error;
+      if (!data?.data) throw new Error('Invalid response format');
 
-      // Create a blob URL from the base64 data
-      const blob = await (await fetch(`data:image/png;base64,${data}`)).blob();
-      return URL.createObjectURL(blob);
+      return `data:image/png;base64,${data.data}`;
     } catch (error) {
       console.error('Error fetching image:', error);
       toast({
@@ -80,13 +78,6 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     };
 
     loadImages();
-
-    // Cleanup function to revoke object URLs
-    return () => {
-      Object.values(loadedImages).forEach(url => {
-        if (url) URL.revokeObjectURL(url);
-      });
-    };
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
