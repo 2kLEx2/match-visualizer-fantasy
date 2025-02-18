@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import html2canvas from 'html2canvas';
+import { Match } from '@/lib/api/matches';
 
 interface CustomEntry {
   id: string;
@@ -15,7 +16,11 @@ interface CustomEntry {
   subtitle: string;
 }
 
-export const GraphicCustomizer = () => {
+interface GraphicCustomizerProps {
+  selectedMatches: Match[];
+}
+
+export const GraphicCustomizer = ({ selectedMatches }: GraphicCustomizerProps) => {
   const { toast } = useToast();
   const [entries, setEntries] = useState<CustomEntry[]>([]);
 
@@ -40,10 +45,10 @@ export const GraphicCustomizer = () => {
   };
 
   const handleDownload = async () => {
-    if (entries.length === 0) {
+    if (entries.length === 0 && selectedMatches.length === 0) {
       toast({
-        title: "No entries added",
-        description: "Please add at least one schedule entry.",
+        title: "No content to download",
+        description: "Please add at least one schedule entry or select a match.",
         variant: "destructive",
       });
       return;
@@ -58,8 +63,37 @@ export const GraphicCustomizer = () => {
 
   return (
     <div className="space-y-6">
+      {selectedMatches.length > 0 && (
+        <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-white">Selected Matches</h3>
+            {selectedMatches.map((match) => (
+              <div 
+                key={match.id}
+                className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300"
+              >
+                <div className="px-3 py-2 grid grid-cols-[70px,1fr] gap-4 items-center">
+                  <div className="text-base font-medium text-gray-400">
+                    {match.time}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-base font-medium text-white">
+                      {match.team1.name} vs {match.team2.name}
+                    </div>
+                    <div className="text-xs uppercase font-medium text-gray-500">
+                      {match.tournament}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
+          <h3 className="text-lg font-medium text-white">Custom Schedule</h3>
           <div className="space-y-4">
             {entries.map((entry) => (
               <div 
@@ -116,7 +150,7 @@ export const GraphicCustomizer = () => {
             <Button
               onClick={handleDownload}
               className="w-full bg-primary hover:bg-primary/90 text-white"
-              disabled={entries.length === 0}
+              disabled={entries.length === 0 && selectedMatches.length === 0}
             >
               <Download className="w-4 h-4 mr-2" />
               Download Graphic
