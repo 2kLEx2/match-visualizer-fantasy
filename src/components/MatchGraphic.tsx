@@ -53,9 +53,9 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        backgroundImage: 'url(https://static-cdn.jtvnw.net/jtv_user_pictures/60c2e503-6d45-4e92-980a-5ff326c2ffc0-channel_offline_image-1920x1080.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: `url(https://static-cdn.jtvnw.net/jtv_user_pictures/60c2e503-6d45-4e92-980a-5ff326c2ffc0-channel_offline_image-1920x1080.png) top center no-repeat`,
+        backgroundSize: '100% auto',
+        minHeight: '100%',
         padding: '20px',
         borderRadius: '12px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
