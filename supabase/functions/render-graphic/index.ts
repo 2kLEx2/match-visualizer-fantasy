@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import * as puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts"
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,22 +12,27 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  let browser;
   try {
     const { html, css } = await req.json()
 
-    // Launch browser
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox']
-    })
+    console.log('Launching browser...');
+    // Launch browser with explicit path
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true
+    });
     
-    const page = await browser.newPage()
+    console.log('Creating new page...');
+    const page = await browser.newPage();
 
     // Set viewport
     await page.setViewport({
       width: 600,
       height: 800
-    })
+    });
 
+    console.log('Setting page content...');
     // Inject content
     await page.setContent(`
       <html>
@@ -38,34 +43,40 @@ serve(async (req) => {
           ${html}
         </body>
       </html>
-    `)
+    `);
 
+    console.log('Waiting for network idle...');
     // Wait for network activity to settle
-    await page.waitForNetworkIdle()
+    await page.waitForNetworkIdle();
 
+    console.log('Taking screenshot...');
     // Take screenshot
     const screenshot = await page.screenshot({
       type: 'png',
       omitBackground: true,
       fullPage: true
-    })
+    });
 
-    await browser.close()
-
+    console.log('Screenshot taken successfully');
     return new Response(screenshot, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'image/png'
       }
-    })
+    });
   } catch (error) {
-    console.error('Screenshot error:', error)
+    console.error('Screenshot error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json'
       }
-    })
+    });
+  } finally {
+    if (browser) {
+      console.log('Closing browser...');
+      await browser.close();
+    }
   }
-})
+});
