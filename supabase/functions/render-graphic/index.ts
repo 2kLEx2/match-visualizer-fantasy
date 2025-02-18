@@ -12,6 +12,7 @@ interface Match {
   team1: Team;
   team2: Team;
   time: string;
+  tournament?: string;
 }
 
 interface RenderRequest {
@@ -25,7 +26,6 @@ interface RenderRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,68 +35,99 @@ Deno.serve(async (req) => {
     console.log('Received request with matches:', matches.length);
 
     // Create canvas with proper dimensions
-    const canvas = createCanvas(600, 200 + matches.length * 80);
+    const canvas = createCanvas(600, Math.max(300, 120 + matches.length * 80));
     const ctx = canvas.getContext('2d');
 
-    // Set background color
-    ctx.fillStyle = settings.backgroundColor;
+    // Set dark background
+    ctx.fillStyle = '#1a1b1e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add subtle gradient overlay
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw title
-    ctx.font = 'bold 24px Arial';
-    ctx.fillStyle = settings.textColor;
-    ctx.textAlign = 'right';
-    ctx.fillText('Watchparty Schedule', canvas.width - 20, 40);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'left';
+    ctx.fillText('Watchparty Schedule', 20, 50);
 
     // Draw matches
     for (let i = 0; i < matches.length; i++) {
       const match = matches[i];
-      const y = 100 + i * 80;
+      const y = 120 + i * 80;
       console.log(`Drawing match ${i + 1}:`, match.team1.name, 'vs', match.team2.name);
 
-      // Draw team names
-      ctx.font = 'bold 18px Arial';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = settings.textColor;
-      
-      const vs = ' vs ';
-      const team1Width = ctx.measureText(match.team1.name).width;
-      const vsWidth = ctx.measureText(vs).width;
-      
-      ctx.fillText(match.team1.name, 20, y);
-      ctx.fillText(vs, 20 + team1Width, y);
-      ctx.fillText(match.team2.name, 20 + team1Width + vsWidth, y);
+      // Draw match container
+      ctx.fillStyle = '#1B2028';
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.roundRect(10, y - 35, canvas.width - 20, 60, 8);
+      ctx.fill();
+      ctx.globalAlpha = 1;
 
       // Draw time if enabled
       if (settings.showTime && match.time) {
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'right';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'left';
         ctx.fillStyle = '#9ca3af';
-        ctx.fillText(match.time, canvas.width - 20, y);
+        ctx.fillText(match.time, 30, y + 5);
       }
 
-      // Draw team logos if enabled
-      if (settings.showLogos) {
-        const logoSize = 30;
-        const logoY = y - 25;
+      const timeWidth = 80;
+      const matchInfoX = timeWidth + 30;
 
-        if (match.team1.logo) {
-          try {
-            const logo1 = await loadImage(match.team1.logo);
-            ctx.drawImage(logo1, 20, logoY, logoSize, logoSize);
-          } catch (error) {
-            console.error(`Error loading team1 logo for ${match.team1.name}:`, error);
-          }
-        }
+      // Draw team names and VS
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      
+      const team1X = matchInfoX;
+      const vsX = team1X + ctx.measureText(match.team1.name).width + 20;
+      const team2X = vsX + 40;
 
-        if (match.team2.logo) {
-          try {
-            const logo2 = await loadImage(match.team2.logo);
-            ctx.drawImage(logo2, 20 + team1Width + vsWidth, logoY, logoSize, logoSize);
-          } catch (error) {
-            console.error(`Error loading team2 logo for ${match.team2.name}:`, error);
-          }
+      // Draw team1 name and logo
+      if (settings.showLogos && match.team1.logo) {
+        try {
+          const logo1 = await loadImage(match.team1.logo);
+          ctx.drawImage(logo1, team1X, y - 15, 24, 24);
+          ctx.fillText(match.team1.name, team1X + 34, y + 5);
+        } catch (error) {
+          console.error(`Error loading team1 logo for ${match.team1.name}:`, error);
+          ctx.fillText(match.team1.name, team1X, y + 5);
         }
+      } else {
+        ctx.fillText(match.team1.name, team1X, y + 5);
+      }
+
+      // Draw VS
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#666666';
+      ctx.fillText('vs', vsX, y + 5);
+
+      // Draw team2 name and logo
+      if (settings.showLogos && match.team2.logo) {
+        try {
+          const logo2 = await loadImage(match.team2.logo);
+          ctx.drawImage(logo2, team2X, y - 15, 24, 24);
+          ctx.fillText(match.team2.name, team2X + 34, y + 5);
+        } catch (error) {
+          console.error(`Error loading team2 logo for ${match.team2.name}:`, error);
+          ctx.fillText(match.team2.name, team2X, y + 5);
+        }
+      } else {
+        ctx.fillText(match.team2.name, team2X, y + 5);
+      }
+
+      // Draw tournament name
+      if (match.tournament) {
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#666666';
+        ctx.textAlign = 'right';
+        ctx.fillText(match.tournament.toUpperCase(), canvas.width - 30, y + 5);
       }
     }
 
