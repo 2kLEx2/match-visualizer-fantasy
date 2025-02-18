@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { chromium } from "https://deno.land/x/playwright@0.300.0/mod.ts"
+import { chromium } from "https://deno.land/x/playwright@0.290.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
