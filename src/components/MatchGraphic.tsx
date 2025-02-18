@@ -1,8 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface MatchGraphicProps {
@@ -24,8 +22,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   const getProxiedImageUrl = async (url: string) => {
     try {
-      // Use a CORS proxy service
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      // Use imgproxy.net as it's more reliable for this use case
+      const proxyUrl = `https://imgproxy.net/api/v1/fetch?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) {
         throw new Error('Failed to load image');
