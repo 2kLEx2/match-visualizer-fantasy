@@ -18,37 +18,9 @@ interface MatchGraphicProps {
 
 export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
-  const [loadedImages, setLoadedImages] = useState<Record<string, string | null>>({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
-
-  const getProxiedImageUrl = async (url: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('proxy-image', {
-        body: { url }
-      });
-
-      if (error) throw error;
-
-      // Return the raw URL if proxy fails
-      if (!data?.data) {
-        console.warn('Proxy failed, using original URL');
-        return url;
-      }
-
-      // Create the data URL directly
-      const base64String = data.data;
-      return `data:image/png;base64,${base64String}`;
-    } catch (error) {
-      console.error('Error fetching image:', error);
-      toast({
-        title: "Warning",
-        description: "Using fallback for team logo",
-        variant: "default",
-      });
-      return url; // Return original URL as fallback
-    }
-  };
 
   useEffect(() => {
     const loadImages = async () => {
@@ -57,32 +29,58 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       for (const match of matches) {
         if (match.team1.logo) {
           newLoadingStates[match.team1.logo] = true;
+          setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: true }));
+          
           try {
-            const imageUrl = await getProxiedImageUrl(match.team1.logo);
-            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: imageUrl }));
+            const img = new Image();
+            img.onload = () => {
+              setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
+              setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
+            };
+            img.onerror = () => {
+              setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
+              setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
+              toast({
+                title: "Warning",
+                description: `Unable to load logo for ${match.team1.name}`,
+                variant: "default",
+              });
+            };
+            img.src = match.team1.logo;
           } catch (error) {
             console.error(`Failed to load logo for ${match.team1.name}:`, error);
-            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: null }));
-          } finally {
-            newLoadingStates[match.team1.logo] = false;
+            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
+            setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
           }
         }
         
         if (match.team2.logo) {
           newLoadingStates[match.team2.logo] = true;
+          setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: true }));
+          
           try {
-            const imageUrl = await getProxiedImageUrl(match.team2.logo);
-            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: imageUrl }));
+            const img = new Image();
+            img.onload = () => {
+              setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
+              setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
+            };
+            img.onerror = () => {
+              setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
+              setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
+              toast({
+                title: "Warning",
+                description: `Unable to load logo for ${match.team2.name}`,
+                variant: "default",
+              });
+            };
+            img.src = match.team2.logo;
           } catch (error) {
             console.error(`Failed to load logo for ${match.team2.name}:`, error);
-            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: null }));
-          } finally {
-            newLoadingStates[match.team2.logo] = false;
+            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
+            setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
           }
         }
       }
-      
-      setLoadingStates(newLoadingStates);
     };
 
     loadImages();
@@ -106,18 +104,13 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    // Show image if available
-    const imageUrl = loadedImages[logo];
-    if (imageUrl) {
+    // Show image if successfully loaded
+    if (loadedImages[logo]) {
       return (
         <img 
-          src={imageUrl}
+          src={logo}
           alt={`${teamName} logo`}
           className="w-[24px] h-[24px] object-contain"
-          onError={() => {
-            console.log('Image load error, using fallback');
-            setLoadedImages(prev => ({ ...prev, [logo]: null }));
-          }}
         />
       );
     }
