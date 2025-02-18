@@ -40,10 +40,37 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       return;
     }
 
-    if (graphicRef.current) {
+    if (!graphicRef.current) {
+      toast({
+        title: "Error",
+        description: "Could not find the graphic element to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Convert custom entries to match format for the graphic
+      const customMatches: Match[] = customEntries.map(entry => ({
+        id: entry.id,
+        time: entry.time,
+        team1: { name: entry.title, logo: '' },
+        team2: { name: '', logo: '' },
+        tournament: '',
+        date: new Date().toISOString(),
+        isCustomEntry: true,
+      }));
+
+      // Combine all matches
+      const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
+        const timeA = parseInt(a.time.replace(':', ''));
+        const timeB = parseInt(b.time.replace(':', ''));
+        return timeA - timeB;
+      });
+
       await downloadGraphic(
         graphicRef.current,
-        selectedMatches,
+        allMatches,
         () => {
           toast({
             title: "Graphic Downloaded",
@@ -59,6 +86,13 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           });
         }
       );
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while downloading the graphic.",
+        variant: "destructive",
+      });
     }
   };
 

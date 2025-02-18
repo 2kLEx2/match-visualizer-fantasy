@@ -1,9 +1,10 @@
 
 import html2canvas from 'html2canvas';
+import { Match } from '@/lib/api/matches';
 
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
-  selectedMatches: any[],
+  matches: Match[],
   onSuccess: () => void,
   onError: (error: Error) => void
 ) => {
@@ -11,7 +12,7 @@ export const downloadGraphic = async (
     // Pre-load all images including logos and background
     const allImages = [
       'https://i.imgur.com/tYDGmvR.png',
-      ...selectedMatches.flatMap(match => [match.team1.logo, match.team2.logo]).filter(Boolean)
+      ...matches.flatMap(match => [match.team1.logo, match.team2.logo]).filter(Boolean)
     ];
 
     await Promise.all(allImages.map(url => {
@@ -48,7 +49,7 @@ export const downloadGraphic = async (
     const canvas = await html2canvas(clone, {
       backgroundColor: '#1a1a1a',
       scale: 3,
-      logging: false,
+      logging: true, // Enable logging for debugging
       useCORS: true,
       allowTaint: false,
       foreignObjectRendering: false,
@@ -70,6 +71,7 @@ export const downloadGraphic = async (
 
     onSuccess();
   } catch (error) {
+    console.error('Download error:', error);
     onError(error as Error);
   }
 };
