@@ -1,6 +1,9 @@
 
-project_id = "your-project-id"
+project_id = "iwxvebibywavdrlkujmq"
 
 [functions.render-graphic]
 verify_jwt = false
-import_map = "./import_map.json"
+import_map = "import_map.json"
+
+[functions.proxy-image]
+verify_jwt = false
