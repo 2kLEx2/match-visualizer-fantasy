@@ -17,12 +17,16 @@ interface CustomEntry {
   id: string;
   time: string;
   title: string;
-  subtitle: string;
 }
 
 export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const { toast } = useToast();
   const graphicRef = useRef<HTMLDivElement>(null);
+  const [newEntry, setNewEntry] = useState<CustomEntry>({
+    id: '',
+    time: '',
+    title: ''
+  });
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
 
   const handleDownload = async () => {
@@ -75,97 +79,120 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   };
 
   const addCustomEntry = () => {
-    const newEntry: CustomEntry = {
+    if (!newEntry.time || !newEntry.title) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in both time and title fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const entryToAdd = {
+      ...newEntry,
       id: Date.now().toString(),
-      time: '',
-      title: '',
-      subtitle: '',
     };
-    setCustomEntries([...customEntries, newEntry]);
+    setCustomEntries([...customEntries, entryToAdd]);
+    setNewEntry({ id: '', time: '', title: '' }); // Reset form
+    
+    toast({
+      title: "Entry Added",
+      description: "Custom entry has been added to the graphic.",
+    });
   };
 
   const removeCustomEntry = (id: string) => {
     setCustomEntries(customEntries.filter(entry => entry.id !== id));
+    toast({
+      title: "Entry Removed",
+      description: "Custom entry has been removed from the graphic.",
+    });
   };
 
-  const updateCustomEntry = (id: string, field: keyof CustomEntry, value: string) => {
-    setCustomEntries(customEntries.map(entry => 
-      entry.id === id ? { ...entry, [field]: value } : entry
-    ));
-  };
+  // Convert custom entries to match format for the graphic
+  const customMatches: Match[] = customEntries.map(entry => ({
+    id: entry.id,
+    time: entry.time,
+    team1: { name: entry.title, logo: '' },
+    team2: { name: '', logo: '' },
+    tournament: '',
+    date: new Date().toISOString(),
+  }));
+
+  const allMatches = [...selectedMatches, ...customMatches];
 
   return (
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
           <div className="space-y-4">
-            {customEntries.map((entry) => (
-              <div 
-                key={entry.id}
-                className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm"
-              >
-                <div className="px-3 py-2 grid grid-cols-[70px,1fr,auto] gap-4 items-center">
-                  <Input
-                    type="text"
-                    value={entry.time}
-                    onChange={(e) => updateCustomEntry(entry.id, 'time', e.target.value)}
-                    placeholder="Time"
-                    className="bg-transparent border-0 text-gray-400 p-0 text-base font-medium focus-visible:ring-0"
-                  />
-                  <div className="space-y-1">
-                    <Input
-                      type="text"
-                      value={entry.title}
-                      onChange={(e) => updateCustomEntry(entry.id, 'title', e.target.value)}
-                      placeholder="Title"
-                      className="bg-transparent border-0 text-white p-0 text-base font-medium focus-visible:ring-0"
-                    />
-                    <Input
-                      type="text"
-                      value={entry.subtitle}
-                      onChange={(e) => updateCustomEntry(entry.id, 'subtitle', e.target.value)}
-                      placeholder="Subtitle"
-                      className="bg-transparent border-0 text-gray-500 p-0 text-xs uppercase font-medium focus-visible:ring-0"
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeCustomEntry(entry.id)}
-                    className="text-gray-400 hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="grid grid-cols-[1fr,1fr,auto] gap-4 items-end">
+              <div>
+                <Input
+                  type="text"
+                  value={newEntry.time}
+                  onChange={(e) => setNewEntry({ ...newEntry, time: e.target.value })}
+                  placeholder="Time (e.g., 19:00)"
+                  className="bg-transparent border-white/20"
+                />
               </div>
-            ))}
+              <div>
+                <Input
+                  type="text"
+                  value={newEntry.title}
+                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                  placeholder="Title"
+                  className="bg-transparent border-white/20"
+                />
+              </div>
+              <Button
+                onClick={addCustomEntry}
+                variant="outline"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {customEntries.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-white/80">Custom Entries:</h3>
+                {customEntries.map((entry) => (
+                  <div 
+                    key={entry.id}
+                    className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm"
+                  >
+                    <div className="px-3 py-2 grid grid-cols-[70px,1fr,auto] gap-4 items-center">
+                      <span className="text-base font-medium text-gray-400">{entry.time}</span>
+                      <span className="text-base font-medium text-white">{entry.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeCustomEntry(entry.id)}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <Button
-              onClick={addCustomEntry}
-              variant="outline"
-              className="w-full"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Custom Entry
-            </Button>
-
-            <Button
-              onClick={handleDownload}
-              className="w-full bg-primary hover:bg-primary/90 text-white"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download Graphic
-            </Button>
-          </div>
+          <Button
+            onClick={handleDownload}
+            className="w-full bg-primary hover:bg-primary/90 text-white"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Graphic
+          </Button>
         </div>
       </Card>
 
-      {(selectedMatches.length > 0 || customEntries.length > 0) && (
+      {(allMatches.length > 0) && (
         <div ref={graphicRef} className="mt-6">
           <MatchGraphic
-            matches={selectedMatches}
+            matches={allMatches}
             settings={{
               showLogos: true,
               showTime: true,
