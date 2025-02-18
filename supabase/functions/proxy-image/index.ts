@@ -13,28 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url)
-    const imageUrl = url.searchParams.get('url')
+    const { url } = await req.json()
 
-    if (!imageUrl) {
-      return new Response('Missing URL parameter', { status: 400 })
+    if (!url) {
+      return new Response('Missing URL parameter', { 
+        status: 400,
+        headers: corsHeaders
+      })
     }
 
-    console.log('Proxying image:', imageUrl)
+    console.log('Proxying image:', url)
 
     // Fetch the image
-    const imageResponse = await fetch(imageUrl)
+    const imageResponse = await fetch(url)
     
     if (!imageResponse.ok) {
       console.error('Failed to fetch image:', imageResponse.status, imageResponse.statusText)
-      return new Response('Failed to fetch image', { status: imageResponse.status })
+      return new Response('Failed to fetch image', { 
+        status: imageResponse.status,
+        headers: corsHeaders
+      })
     }
 
     // Get the image data and content type
     const imageData = await imageResponse.arrayBuffer()
     const contentType = imageResponse.headers.get('content-type')
 
-    console.log('Successfully proxied image:', imageUrl)
+    console.log('Successfully proxied image:', url)
 
     // Return the image with appropriate headers
     return new Response(imageData, {
@@ -46,6 +51,12 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Error in proxy-image function:', error)
-    return new Response(error.message, { status: 500 })
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    })
   }
 })

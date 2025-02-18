@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -19,21 +20,20 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
   const [loadedImages, setLoadedImages] = useState<Record<string, string | null>>({});
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
   const getProxiedImageUrl = async (url: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('proxy-image', {
-        body: { url }
-      });
-      
-      if (error) {
-        console.error('Error proxying image:', error);
-        return null;
-      }
-      
-      return data?.imageUrl || null;
+      const response = await fetch(url, { mode: 'no-cors' });
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
     } catch (error) {
-      console.error('Error proxying image:', error);
+      console.error('Error fetching image:', error);
+      toast({
+        title: "Error loading image",
+        description: "Failed to load team logo",
+        variant: "destructive",
+      });
       return null;
     }
   };
@@ -46,8 +46,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         if (match.team1.logo) {
           newLoadingStates[match.team1.logo] = true;
           try {
-            const proxiedUrl = await getProxiedImageUrl(match.team1.logo);
-            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: proxiedUrl }));
+            const imageUrl = await getProxiedImageUrl(match.team1.logo);
+            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: imageUrl }));
           } catch (error) {
             console.error(`Failed to load logo for ${match.team1.name}:`, error);
             setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: null }));
@@ -59,8 +59,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         if (match.team2.logo) {
           newLoadingStates[match.team2.logo] = true;
           try {
-            const proxiedUrl = await getProxiedImageUrl(match.team2.logo);
-            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: proxiedUrl }));
+            const imageUrl = await getProxiedImageUrl(match.team2.logo);
+            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: imageUrl }));
           } catch (error) {
             console.error(`Failed to load logo for ${match.team2.name}:`, error);
             setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: null }));
@@ -74,6 +74,13 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     };
 
     loadImages();
+
+    // Cleanup function to revoke object URLs
+    return () => {
+      Object.values(loadedImages).forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
