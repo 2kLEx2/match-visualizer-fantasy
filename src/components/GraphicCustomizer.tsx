@@ -1,163 +1,167 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Download } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
-import html2canvas from 'html2canvas';
+import { MatchGraphic } from './MatchGraphic';
 import { Match } from '@/lib/api/matches';
+import html2canvas from 'html2canvas';
+import { Download } from 'lucide-react';
 
-interface CustomEntry {
-  id: string;
-  time: string;
-  title: string;
-  subtitle: string;
-}
-
-interface GraphicCustomizerProps {
+interface CustomizerProps {
   selectedMatches: Match[];
 }
 
-export const GraphicCustomizer = ({ selectedMatches }: GraphicCustomizerProps) => {
+interface CustomSettings {
+  showLogos: boolean;
+  showTime: boolean;
+  backgroundColor: string;
+  textColor: string;
+  scale: number;
+}
+
+export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const { toast } = useToast();
-  const [entries, setEntries] = useState<CustomEntry[]>([]);
-
-  const addEntry = () => {
-    const newEntry: CustomEntry = {
-      id: Date.now().toString(),
-      time: '',
-      title: '',
-      subtitle: '',
-    };
-    setEntries([...entries, newEntry]);
-  };
-
-  const removeEntry = (id: string) => {
-    setEntries(entries.filter(entry => entry.id !== id));
-  };
-
-  const updateEntry = (id: string, field: keyof CustomEntry, value: string) => {
-    setEntries(entries.map(entry => 
-      entry.id === id ? { ...entry, [field]: value } : entry
-    ));
-  };
+  const graphicRef = useRef<HTMLDivElement>(null);
+  const [settings, setSettings] = useState<CustomSettings>({
+    showLogos: true,
+    showTime: true,
+    backgroundColor: '#1a1a1a',
+    textColor: '#ffffff',
+    scale: 100,
+  });
 
   const handleDownload = async () => {
-    if (entries.length === 0 && selectedMatches.length === 0) {
+    if (selectedMatches.length === 0) {
       toast({
-        title: "No content to download",
-        description: "Please add at least one schedule entry or select a match.",
+        title: "No matches selected",
+        description: "Please select at least one match to generate a graphic.",
         variant: "destructive",
       });
       return;
     }
 
-    // Download functionality can be implemented later
-    toast({
-      title: "Coming Soon",
-      description: "Download functionality will be available in the next update.",
-    });
+    if (graphicRef.current) {
+      try {
+        const canvas = await html2canvas(graphicRef.current, {
+          backgroundColor: settings.backgroundColor,
+          scale: 2, // Increase quality
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          onclone: (clonedDoc) => {
+            // Ensure all images are loaded before capture
+            const images = clonedDoc.getElementsByTagName('img');
+            Array.from(images).forEach(img => {
+              if (!img.complete) {
+                img.style.display = 'none';
+              }
+            });
+          }
+        });
+        
+        const image = canvas.toDataURL('image/png', 1.0);
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = 'match-graphic.png';
+        link.click();
+        
+        toast({
+          title: "Graphic Downloaded",
+          description: "Your match graphic has been downloaded successfully.",
+        });
+      } catch (error) {
+        console.error('Error generating graphic:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate the graphic. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   return (
     <div className="space-y-6">
-      {selectedMatches.length > 0 && (
-        <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-white">Selected Matches</h3>
-            {selectedMatches.map((match) => (
-              <div 
-                key={match.id}
-                className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300"
-              >
-                <div className="px-3 py-2 grid grid-cols-[70px,1fr] gap-4 items-center">
-                  <div className="text-base font-medium text-gray-400">
-                    {match.time}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-base font-medium text-white">
-                      {match.team1.name} vs {match.team2.name}
-                    </div>
-                    <div className="text-xs uppercase font-medium text-gray-500">
-                      {match.tournament}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
-          <h3 className="text-lg font-medium text-white">Custom Schedule</h3>
-          <div className="space-y-4">
-            {entries.map((entry) => (
-              <div 
-                key={entry.id}
-                className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm"
-              >
-                <div className="px-3 py-2 grid grid-cols-[70px,1fr,auto] gap-4 items-center">
-                  <Input
-                    type="text"
-                    value={entry.time}
-                    onChange={(e) => updateEntry(entry.id, 'time', e.target.value)}
-                    placeholder="Time"
-                    className="bg-transparent border-0 text-gray-400 p-0 text-base font-medium focus-visible:ring-0"
-                  />
-                  <div className="space-y-1">
-                    <Input
-                      type="text"
-                      value={entry.title}
-                      onChange={(e) => updateEntry(entry.id, 'title', e.target.value)}
-                      placeholder="Title"
-                      className="bg-transparent border-0 text-white p-0 text-base font-medium focus-visible:ring-0"
-                    />
-                    <Input
-                      type="text"
-                      value={entry.subtitle}
-                      onChange={(e) => updateEntry(entry.id, 'subtitle', e.target.value)}
-                      placeholder="Subtitle"
-                      className="bg-transparent border-0 text-gray-500 p-0 text-xs uppercase font-medium focus-visible:ring-0"
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeEntry(entry.id)}
-                    className="text-gray-400 hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+          <div className="space-y-2">
+            <Label>Display Options</Label>
+            <div className="flex items-center justify-between">
+              <span>Show Team Logos</span>
+              <Switch
+                checked={settings.showLogos}
+                onCheckedChange={(checked) => setSettings({ ...settings, showLogos: checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Show Match Time</span>
+              <Switch
+                checked={settings.showTime}
+                onCheckedChange={(checked) => setSettings({ ...settings, showTime: checked })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Colors</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <span className="text-sm">Background</span>
+                <Input
+                  type="color"
+                  value={settings.backgroundColor}
+                  onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
+                  className="h-10"
+                />
               </div>
-            ))}
+              <div className="space-y-2">
+                <span className="text-sm">Text</span>
+                <Input
+                  type="color"
+                  value={settings.textColor}
+                  onChange={(e) => setSettings({ ...settings, textColor: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <Button
-              onClick={addEntry}
-              variant="outline"
+          <div className="space-y-2">
+            <Label>Scale</Label>
+            <Slider
+              value={[settings.scale]}
+              onValueChange={(value) => setSettings({ ...settings, scale: value[0] })}
+              min={50}
+              max={150}
+              step={1}
               className="w-full"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Schedule Entry
-            </Button>
-
-            <Button
-              onClick={handleDownload}
-              className="w-full bg-primary hover:bg-primary/90 text-white"
-              disabled={entries.length === 0 && selectedMatches.length === 0}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download Graphic
-            </Button>
+            />
+            <span className="text-sm text-muted-foreground">{settings.scale}%</span>
           </div>
+
+          <Button
+            onClick={handleDownload}
+            className="w-full bg-primary hover:bg-primary/90 text-white"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Graphic
+          </Button>
         </div>
       </Card>
+
+      {selectedMatches.length > 0 && (
+        <div ref={graphicRef} className="mt-6">
+          <MatchGraphic
+            matches={selectedMatches}
+            settings={settings}
+          />
+        </div>
+      )}
     </div>
   );
 };
