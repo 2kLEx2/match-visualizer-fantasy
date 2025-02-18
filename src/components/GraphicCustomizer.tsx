@@ -41,21 +41,49 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
     if (graphicRef.current) {
       try {
-        const canvas = await html2canvas(graphicRef.current, {
+        // Create a wrapper div to maintain aspect ratio and scaling
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '-9999px';
+        wrapper.style.width = '600px'; // Match the original width
+        wrapper.style.transform = 'scale(1)'; // Reset scale for capturing
+        
+        // Clone the graphic element
+        const clone = graphicRef.current.cloneNode(true) as HTMLElement;
+        clone.style.transform = 'scale(1)'; // Reset scale for capturing
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
+        // Pre-load the background image
+        const bgImg = new Image();
+        bgImg.src = 'https://i.imgur.com/tYDGmvR.png';
+        
+        await new Promise((resolve) => {
+          bgImg.onload = resolve;
+        });
+
+        const canvas = await html2canvas(clone, {
           backgroundColor: '#1a1a1a',
-          scale: 2,
+          scale: 2, // Higher scale for better quality
           logging: false,
           useCORS: true,
           allowTaint: true,
+          width: 600, // Match the original width
+          height: clone.offsetHeight,
           onclone: (clonedDoc) => {
             const images = clonedDoc.getElementsByTagName('img');
             Array.from(images).forEach(img => {
+              img.crossOrigin = 'anonymous';
               if (!img.complete) {
                 img.style.display = 'none';
               }
             });
           }
         });
+        
+        // Clean up the temporary wrapper
+        document.body.removeChild(wrapper);
         
         const image = canvas.toDataURL('image/png', 1.0);
         const link = document.createElement('a');
@@ -117,7 +145,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     team2: { name: '', logo: '' },
     tournament: '',
     date: new Date().toISOString(),
-    isCustomEntry: true, // Mark as custom entry
+    isCustomEntry: true,
   }));
 
   // Combine and sort all matches by time
@@ -200,7 +228,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           <MatchGraphic
             matches={allMatches}
             settings={{
-              showLogos: true, // Set back to true to show logos for selected matches
+              showLogos: true,
               showTime: true,
               backgroundColor: '#1a1a1a',
               textColor: '#ffffff',
