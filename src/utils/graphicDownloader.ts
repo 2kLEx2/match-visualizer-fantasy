@@ -1,5 +1,4 @@
 
-import html2canvas from 'html2canvas';
 import { Match } from '@/lib/api/matches';
 
 export const downloadGraphic = async (
@@ -9,34 +8,71 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // Wait for a small delay to ensure the DOM is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Create a temporary container
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '-9999px';
+    document.body.appendChild(container);
 
-    // Create canvas with proper settings
-    const canvas = await html2canvas(graphicRef, {
-      backgroundColor: '#FFFFFF',
-      scale: 3,
-      logging: true,
-      useCORS: true,
-      allowTaint: true,
-      foreignObjectRendering: true,
-      imageTimeout: 15000,
-      width: 600,
-      height: graphicRef.offsetHeight,
-    });
+    // Clone the graphic element
+    const clone = graphicRef.cloneNode(true) as HTMLElement;
+    container.appendChild(clone);
 
-    // Convert to PNG
-    const image = canvas.toDataURL('image/png', 1.0);
-    
-    // Create download link
-    const link = document.createElement('a');
-    link.download = 'match-graphic.png';
-    link.href = image;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Convert the element to SVG using foreignObject
+    const data = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${graphicRef.offsetWidth}" height="${graphicRef.offsetHeight}">
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml">
+            ${container.innerHTML}
+          </div>
+        </foreignObject>
+      </svg>
+    `;
 
-    onSuccess();
+    // Create a Blob from the SVG
+    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+    const URL = window.URL || window.webkitURL || window;
+    const blobURL = URL.createObjectURL(blob);
+
+    // Create an Image to convert SVG to canvas
+    const img = new Image();
+    img.onload = () => {
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = graphicRef.offsetWidth * 2; // Higher resolution
+      canvas.height = graphicRef.offsetHeight * 2;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // Set white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw the image
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to PNG and download
+        const pngURL = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'match-graphic.png';
+        link.href = pngURL;
+        link.click();
+        
+        // Cleanup
+        URL.revokeObjectURL(blobURL);
+        document.body.removeChild(container);
+        onSuccess();
+      }
+    };
+
+    img.onerror = (error) => {
+      console.error('Image loading error:', error);
+      document.body.removeChild(container);
+      onError(error as Error);
+    };
+
+    img.src = blobURL;
   } catch (error) {
     console.error('Download error:', error);
     onError(error as Error);
