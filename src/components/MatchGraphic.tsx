@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface MatchGraphicProps {
@@ -22,13 +24,14 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   const getProxiedImageUrl = async (url: string) => {
     try {
-      // Use imgproxy.net as it's more reliable for this use case
-      const proxyUrl = `https://imgproxy.net/api/v1/fetch?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        throw new Error('Failed to load image');
-      }
-      const blob = await response.blob();
+      const { data, error } = await supabase.functions.invoke('proxy-image', {
+        body: { url }
+      });
+
+      if (error) throw error;
+
+      // Create a blob URL from the base64 data
+      const blob = await (await fetch(`data:image/png;base64,${data}`)).blob();
       return URL.createObjectURL(blob);
     } catch (error) {
       console.error('Error fetching image:', error);
