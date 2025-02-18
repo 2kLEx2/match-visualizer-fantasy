@@ -53,8 +53,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        background: `url(https://static-cdn.jtvnw.net/jtv_user_pictures/60c2e503-6d45-4e92-980a-5ff326c2ffc0-channel_offline_image-1920x1080.png) top center no-repeat`,
-        backgroundSize: '100% auto',
+        background: `url(/lovable-uploads/96a04188-0b52-48a9-aeab-62eb8135d21d.png) top center no-repeat`,
+        backgroundSize: 'cover',
         minHeight: '100%',
         padding: '20px',
         borderRadius: '12px',
