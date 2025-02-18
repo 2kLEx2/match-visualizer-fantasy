@@ -1,6 +1,6 @@
 
 import { Match } from '@/lib/api/matches';
-import domtoimage from 'dom-to-image';
+import html2canvas from 'html2canvas';
 import { supabase } from '@/lib/supabase/client';
 
 export const downloadGraphic = async (
@@ -53,27 +53,35 @@ export const downloadGraphic = async (
     // Wait for images to load
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Generate image
-    const options = {
-      quality: 1,
-      bgcolor: '#000000',
-      style: {
-        'transform': 'none'
-      }
-    };
+    // Generate canvas
+    const canvas = await html2canvas(container, {
+      backgroundColor: '#000000',
+      scale: 2, // Higher quality
+      logging: false,
+      useCORS: true,
+      allowTaint: true,
+      foreignObjectRendering: true
+    });
 
-    const dataUrl = await domtoimage.toJpeg(container, options);
-    
+    // Convert to blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob as Blob);
+      }, 'image/jpeg', 1.0);
+    });
+
     // Create download link
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = 'match-graphic.jpg';
-    link.href = dataUrl;
+    link.href = url;
     document.body.appendChild(link);
     link.click();
     
     // Cleanup
     document.body.removeChild(link);
     document.body.removeChild(container);
+    URL.revokeObjectURL(url);
     Array.from(images).forEach(img => {
       if (img.src.startsWith('blob:')) {
         URL.revokeObjectURL(img.src);
