@@ -18,52 +18,27 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
-  const preloadImage = (src: string) => {
-    if (!src) return Promise.reject(new Error('No image source provided'));
-    if (loadedImages[src] !== undefined) return Promise.resolve(src);
-
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = src;
-      img.crossOrigin = "anonymous";
-      
-      img.onload = () => {
-        setLoadedImages(prev => ({ ...prev, [src]: true }));
-        resolve(src);
-      };
-      
-      img.onerror = (error) => {
-        console.error('Image load error:', error);
-        setLoadedImages(prev => ({ ...prev, [src]: false }));
-        reject(error);
-      };
-    });
-  };
-
   useEffect(() => {
-    const loadImages = async () => {
-      for (const match of matches) {
-        if (match.team1.logo) {
-          try {
-            await preloadImage(match.team1.logo);
-          } catch (error) {
-            console.error(`Failed to load logo for ${match.team1.name}:`, error);
-          }
-        }
-        if (match.team2.logo) {
-          try {
-            await preloadImage(match.team2.logo);
-          } catch (error) {
-            console.error(`Failed to load logo for ${match.team2.name}:`, error);
-          }
-        }
+    matches.forEach(match => {
+      if (match.team1.logo) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
+        img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
+        img.src = match.team1.logo;
       }
-    };
-
-    loadImages();
+      if (match.team2.logo) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
+        img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
+        img.src = match.team2.logo;
+      }
+    });
   }, [matches]);
 
   const renderLogo = (logo: string | undefined, teamName: string) => {
+    // Show Shield icon if no logo or if logo failed to load
     if (!logo || loadedImages[logo] === false) {
       return (
         <div className="w-[24px] h-[24px] flex items-center justify-center">
@@ -72,17 +47,23 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
+    // Show loading Shield while image is still loading
+    if (loadedImages[logo] === undefined) {
+      return (
+        <div className="w-[24px] h-[24px] flex items-center justify-center">
+          <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
+        </div>
+      );
+    }
+
+    // Show logo if it loaded successfully
     return (
       <img 
         src={logo}
         alt={`${teamName} logo`}
         className="w-[24px] h-[24px] object-contain"
         crossOrigin="anonymous"
-        loading="eager"
-        onError={(e) => {
-          console.error(`Error loading image for ${teamName}:`, e);
-          setLoadedImages(prev => ({ ...prev, [logo]: false }));
-        }}
+        onError={() => setLoadedImages(prev => ({ ...prev, [logo]: false }))}
       />
     );
   };
