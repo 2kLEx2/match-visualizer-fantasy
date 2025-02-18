@@ -18,16 +18,13 @@ export const loadImage = async (url: string): Promise<boolean> => {
 
     const directResult = await directLoadPromise;
     if (directResult) return true;
-
-    // If direct loading fails, try using the proxy
-    console.log('Direct image load failed, trying proxy:', url);
     
+    // If direct loading fails, try using the proxy silently
     const { data, error } = await supabase.functions.invoke('proxy-image', {
       body: { url }
     });
 
     if (error || !data?.success) {
-      console.error('Proxy error:', error || 'No success response');
       return false;
     }
 
@@ -35,14 +32,10 @@ export const loadImage = async (url: string): Promise<boolean> => {
     const proxiedImg = new Image();
     return new Promise((resolve) => {
       proxiedImg.onload = () => resolve(true);
-      proxiedImg.onerror = () => {
-        console.error('Failed to load proxied image');
-        resolve(false);
-      };
+      proxiedImg.onerror = () => resolve(false);
       proxiedImg.src = url;
     });
   } catch (error) {
-    console.error('Image loading error:', error);
     return false;
   }
 };
@@ -58,10 +51,8 @@ export const useImageLoader = () => {
       
       try {
         onLoadStateChange(url, { loaded: false, loading: true });
-        console.log('Starting image load:', url);
         
         const success = await loadImage(url);
-        console.log('Image load result:', url, success);
         
         onLoadStateChange(url, { loaded: success, loading: false });
         
@@ -69,7 +60,6 @@ export const useImageLoader = () => {
           onError(`Unable to load image: ${url}`);
         }
       } catch (error) {
-        console.error('Error in image loading process:', error);
         onLoadStateChange(url, { loaded: false, loading: false });
         onError(`Failed to load image: ${url}`);
       }
