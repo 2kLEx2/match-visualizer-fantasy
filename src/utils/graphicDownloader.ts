@@ -14,7 +14,7 @@ export const downloadGraphic = async (
 
     // Create canvas with proper settings
     const canvas = await html2canvas(graphicRef, {
-      backgroundColor: '#1a1a1a',
+      backgroundColor: '#FFFFFF',
       scale: 3,
       logging: true,
       useCORS: true,

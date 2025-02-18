@@ -184,8 +184,8 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             settings={{
               showLogos: true,
               showTime: true,
-              backgroundColor: '#1a1a1a',
-              textColor: '#ffffff',
+              backgroundColor: '#FFFFFF',
+              textColor: '#000000',
               scale: 100,
             }}
           />
