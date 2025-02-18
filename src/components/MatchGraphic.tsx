@@ -54,8 +54,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png) top center no-repeat`,
-        backgroundColor: '#1a1b1e',
+        background: `#1a1b1e`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`,
+        backgroundPosition: 'top center',
+        backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
         minHeight: '100%',
         padding: '20px',
