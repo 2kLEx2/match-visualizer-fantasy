@@ -29,6 +29,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     title: ''
   });
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -49,8 +50,10 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       return;
     }
 
+    setIsDownloading(true);
+
     try {
-      // Convert custom entries to match format for the graphic
+      // Convert custom entries to match format
       const customMatches: Match[] = customEntries.map(entry => ({
         id: entry.id,
         time: entry.time,
@@ -73,12 +76,12 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
         allMatches,
         () => {
           toast({
-            title: "Graphic Downloaded",
-            description: "Your graphic has been downloaded successfully.",
+            title: "Success",
+            description: "Graphic has been downloaded successfully.",
           });
         },
         (error) => {
-          console.error('Error generating graphic:', error);
+          console.error('Download error:', error);
           toast({
             title: "Error",
             description: "Failed to generate the graphic. Please try again.",
@@ -93,6 +96,8 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
         description: "An unexpected error occurred while downloading the graphic.",
         variant: "destructive",
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -163,10 +168,11 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
           <Button
             onClick={handleDownload}
+            disabled={isDownloading}
             className="w-full bg-primary hover:bg-primary/90 text-white"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Download Graphic
+            <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
+            {isDownloading ? 'Downloading...' : 'Download Graphic'}
           </Button>
         </div>
       </Card>
