@@ -13,21 +13,32 @@ export const downloadGraphic = async (
     // Create a wrapper div with solid background
     const wrapper = document.createElement('div');
     wrapper.style.backgroundColor = '#1a1b1e';
-    wrapper.style.padding = '1px'; // Minimal padding to contain the element
+    wrapper.style.padding = '20px';
+    wrapper.style.width = 'fit-content';
     
     // Clone the graphic element
     const clone = graphicRef.cloneNode(true) as HTMLElement;
+    
+    // Ensure the clone maintains all the styling
+    const computedStyle = window.getComputedStyle(graphicRef);
+    clone.style.cssText = computedStyle.cssText;
+    clone.style.backgroundColor = '#1a1b1e';
+    clone.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`;
+    clone.style.transform = 'none'; // Remove scaling for capture
+    
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
     const canvas = await html2canvas(wrapper, {
       backgroundColor: '#1a1b1e',
       scale: 2,
-      logging: false,
+      logging: true, // Enable logging to debug
       useCORS: true,
       allowTaint: true,
       removeContainer: true,
-      foreignObjectRendering: true
+      foreignObjectRendering: true,
+      width: graphicRef.offsetWidth,
+      height: graphicRef.offsetHeight
     });
 
     // Cleanup the wrapper
