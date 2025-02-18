@@ -17,7 +17,8 @@ interface MatchGraphicProps {
 
 export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, string | null>>({});
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
   const getProxiedImageUrl = async (url: string) => {
     try {
@@ -39,41 +40,44 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   useEffect(() => {
     const loadImages = async () => {
+      const newLoadingStates: Record<string, boolean> = {};
+      
       for (const match of matches) {
         if (match.team1.logo) {
+          newLoadingStates[match.team1.logo] = true;
           try {
             const proxiedUrl = await getProxiedImageUrl(match.team1.logo);
-            if (proxiedUrl) {
-              const img = new Image();
-              img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
-              img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
-              img.src = proxiedUrl;
-            }
+            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: proxiedUrl }));
           } catch (error) {
             console.error(`Failed to load logo for ${match.team1.name}:`, error);
+            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: null }));
+          } finally {
+            newLoadingStates[match.team1.logo] = false;
           }
         }
+        
         if (match.team2.logo) {
+          newLoadingStates[match.team2.logo] = true;
           try {
             const proxiedUrl = await getProxiedImageUrl(match.team2.logo);
-            if (proxiedUrl) {
-              const img = new Image();
-              img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
-              img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
-              img.src = proxiedUrl;
-            }
+            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: proxiedUrl }));
           } catch (error) {
             console.error(`Failed to load logo for ${match.team2.name}:`, error);
+            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: null }));
+          } finally {
+            newLoadingStates[match.team2.logo] = false;
           }
         }
       }
+      
+      setLoadingStates(newLoadingStates);
     };
 
     loadImages();
   }, [matches]);
 
-  const renderLogo = async (logo: string | undefined, teamName: string) => {
-    if (!logo || loadedImages[logo] === false) {
+  const renderLogo = (logo: string | undefined, teamName: string) => {
+    if (!logo) {
       return (
         <div className="w-[24px] h-[24px] flex items-center justify-center">
           <Shield className="w-5 h-5 text-gray-400" />
@@ -81,8 +85,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    // Show loading Shield while image is still loading
-    if (loadedImages[logo] === undefined) {
+    // Show loading state
+    if (loadingStates[logo]) {
       return (
         <div className="w-[24px] h-[24px] flex items-center justify-center">
           <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
@@ -90,32 +94,25 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    try {
-      const proxiedUrl = await getProxiedImageUrl(logo);
-      if (!proxiedUrl) {
-        return (
-          <div className="w-[24px] h-[24px] flex items-center justify-center">
-            <Shield className="w-5 h-5 text-gray-400" />
-          </div>
-        );
-      }
-
+    // Show proxied image if available
+    const proxiedUrl = loadedImages[logo];
+    if (proxiedUrl) {
       return (
         <img 
           src={proxiedUrl}
           alt={`${teamName} logo`}
           className="w-[24px] h-[24px] object-contain"
-          onError={() => setLoadedImages(prev => ({ ...prev, [logo]: false }))}
+          onError={() => setLoadedImages(prev => ({ ...prev, [logo]: null }))}
         />
       );
-    } catch (error) {
-      console.error(`Error loading image for ${teamName}:`, error);
-      return (
-        <div className="w-[24px] h-[24px] flex items-center justify-center">
-          <Shield className="w-5 h-5 text-gray-400" />
-        </div>
-      );
     }
+
+    // Fallback to shield if image failed to load
+    return (
+      <div className="w-[24px] h-[24px] flex items-center justify-center">
+        <Shield className="w-5 h-5 text-gray-400" />
+      </div>
+    );
   };
 
   const isBIGMatch = (match: Match) => {
