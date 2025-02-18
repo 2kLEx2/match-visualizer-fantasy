@@ -1,6 +1,7 @@
 
 import { Match } from '@/lib/api/matches';
 import { supabase } from '@/lib/supabase/client';
+import html2canvas from 'html2canvas';
 
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
@@ -9,15 +10,28 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    const settings = {
-      showLogos: true,
-      showTime: true,
-      backgroundColor: '#1a1b1e',
-      textColor: 'white'
-    };
+    // First, capture the HTML element as a canvas
+    const canvas = await html2canvas(graphicRef, {
+      backgroundColor: null,
+      scale: 2, // Higher quality
+      logging: true,
+    });
 
+    // Convert canvas to base64 PNG
+    const base64Image = canvas.toDataURL('image/png');
+
+    // Call the render-graphic function with the base64 image
     const { data, error } = await supabase.functions.invoke('render-graphic', {
-      body: { matches, settings }
+      body: { 
+        matches,
+        settings: {
+          showLogos: true,
+          showTime: true,
+          backgroundColor: '#1a1b1e',
+          textColor: 'white'
+        },
+        imageData: base64Image
+      }
     });
 
     if (error) throw error;
