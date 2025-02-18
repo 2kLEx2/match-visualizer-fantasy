@@ -32,7 +32,6 @@ export const downloadGraphic = async (
 
     // Create a Blob from the SVG
     const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-    const URL = window.URL || window.webkitURL || window;
     const blobURL = URL.createObjectURL(blob);
 
     // Create an Image to convert SVG to canvas
@@ -69,12 +68,12 @@ export const downloadGraphic = async (
     img.onerror = (error) => {
       console.error('Image loading error:', error);
       document.body.removeChild(container);
-      onError(error as Error);
+      onError(new Error('Failed to load image for conversion'));
     };
 
     img.src = blobURL;
   } catch (error) {
     console.error('Download error:', error);
-    onError(error as Error);
+    onError(error instanceof Error ? error : new Error('An unknown error occurred'));
   }
 };
