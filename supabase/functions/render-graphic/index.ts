@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { Browser } from 'https://deno.land/x/puppeteer@16.2.0/vendor/puppeteer-core/puppeteer/common/Browser.js'
+import { chromium } from 'https://deno.land/x/playwright@0.180.0/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,15 +15,18 @@ serve(async (req) => {
   try {
     const { html, css } = await req.json()
 
-    // Create a new Chrome instance
-    const browser = await Deno.createBrowser()
-    const page = await browser.newPage()
+    // Launch browser
+    const browser = await chromium.launch({
+      args: ['--no-sandbox']
+    })
+    
+    const context = await browser.newContext()
+    const page = await context.newPage()
 
     // Set viewport
-    await page.setViewport({
+    await page.setViewportSize({
       width: 600,
-      height: 800,
-      deviceScaleFactor: 2,
+      height: 800
     })
 
     // Inject content
@@ -38,7 +41,7 @@ serve(async (req) => {
       </html>
     `)
 
-    // Wait for all content to load
+    // Wait for network activity to settle
     await page.waitForLoadState('networkidle')
 
     // Take screenshot
