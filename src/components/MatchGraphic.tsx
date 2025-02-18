@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
-import { Shield } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useImageLoader } from '@/lib/utils/imageLoader';
+import { MatchRow } from './MatchRow';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -21,107 +21,27 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  const { loadImages } = useImageLoader();
 
   useEffect(() => {
-    const loadImages = async () => {
-      const newLoadingStates: Record<string, boolean> = {};
-      
-      for (const match of matches) {
-        if (match.team1.logo) {
-          newLoadingStates[match.team1.logo] = true;
-          setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: true }));
-          
-          try {
-            const img = new Image();
-            img.onload = () => {
-              setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
-              setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
-            };
-            img.onerror = () => {
-              setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
-              setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
-              toast({
-                title: "Warning",
-                description: `Unable to load logo for ${match.team1.name}`,
-                variant: "default",
-              });
-            };
-            img.src = match.team1.logo;
-          } catch (error) {
-            console.error(`Failed to load logo for ${match.team1.name}:`, error);
-            setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
-            setLoadingStates(prev => ({ ...prev, [match.team1.logo!]: false }));
-          }
-        }
-        
-        if (match.team2.logo) {
-          newLoadingStates[match.team2.logo] = true;
-          setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: true }));
-          
-          try {
-            const img = new Image();
-            img.onload = () => {
-              setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
-              setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
-            };
-            img.onerror = () => {
-              setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
-              setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
-              toast({
-                title: "Warning",
-                description: `Unable to load logo for ${match.team2.name}`,
-                variant: "default",
-              });
-            };
-            img.src = match.team2.logo;
-          } catch (error) {
-            console.error(`Failed to load logo for ${match.team2.name}:`, error);
-            setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
-            setLoadingStates(prev => ({ ...prev, [match.team2.logo!]: false }));
-          }
-        }
+    const allLogos = matches.flatMap(match => [match.team1.logo, match.team2.logo])
+      .filter((logo): logo is string => !!logo);
+
+    loadImages(
+      allLogos,
+      (url, state) => {
+        setLoadedImages(prev => ({ ...prev, [url]: state.loaded }));
+        setLoadingStates(prev => ({ ...prev, [url]: state.loading }));
+      },
+      (message) => {
+        toast({
+          title: "Warning",
+          description: message,
+          variant: "default",
+        });
       }
-    };
-
-    loadImages();
-  }, [matches]);
-
-  const renderLogo = (logo: string | undefined, teamName: string) => {
-    if (!logo) {
-      return (
-        <div className="w-[24px] h-[24px] flex items-center justify-center">
-          <Shield className="w-5 h-5 text-gray-400" />
-        </div>
-      );
-    }
-
-    // Show loading state
-    if (loadingStates[logo]) {
-      return (
-        <div className="w-[24px] h-[24px] flex items-center justify-center">
-          <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
-        </div>
-      );
-    }
-
-    // Show image if successfully loaded
-    if (loadedImages[logo]) {
-      return (
-        <img 
-          src={logo}
-          alt={`${teamName} logo`}
-          className="w-[24px] h-[24px] object-contain"
-        />
-      );
-    }
-
-    // Fallback to shield
-    return (
-      <div className="w-[24px] h-[24px] flex items-center justify-center">
-        <Shield className="w-5 h-5 text-gray-400" />
-      </div>
     );
-  };
+  }, [matches]);
 
   const isBIGMatch = (match: Match) => {
     return match.team1.name === "BIG" || match.team2.name === "BIG";
@@ -145,55 +65,17 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
         Watchparty Schedule
       </h1>
 
-      {matches.map((match) => {
-        const isBIG = isBIGMatch(match);
-        return (
-          <div key={match.id} className="space-y-1">
-            <div 
-              className={`rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm ${
-                isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
-              }`}
-            >
-              <div className="px-3 py-2 flex items-center">
-                {settings.showTime && (
-                  <div className="text-base font-medium text-gray-400 w-[70px]">
-                    {match.time}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-8 flex-1">
-                  <div className="flex items-center gap-2">
-                    {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
-                    <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
-                      {match.team1.name}
-                    </span>
-                  </div>
-
-                  <span className="text-xs font-medium text-gray-500">
-                    vs
-                  </span>
-
-                  <div className="flex items-center gap-2">
-                    {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
-                    <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
-                      {match.team2.name}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-xs font-medium text-gray-500 uppercase ml-2">
-                  {match.tournament}
-                </div>
-              </div>
-            </div>
-            {isBIG && (
-              <div className="text-xs text-primary font-medium italic pl-[70px]">
-                Anwesenheitspflicht
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {matches.map((match) => (
+        <MatchRow
+          key={match.id}
+          match={match}
+          isBIG={isBIGMatch(match)}
+          showTime={settings.showTime}
+          showLogos={settings.showLogos}
+          loadedImages={loadedImages}
+          loadingStates={loadingStates}
+        />
+      ))}
     </div>
   );
 };
