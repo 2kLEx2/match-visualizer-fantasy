@@ -1,5 +1,5 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,13 +42,13 @@ serve(async (req) => {
       })
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+    const contentType = imageResponse.headers.get('content-type')
+    const imageData = await imageResponse.arrayBuffer()
 
-    return new Response(JSON.stringify({ data: base64Image }), {
+    return new Response(imageData, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/json'
+        'Content-Type': contentType || 'image/png'
       }
     })
   } catch (error) {
