@@ -26,17 +26,12 @@ export const loadImage = async (url: string): Promise<boolean> => {
       body: { url }
     });
 
-    if (error) {
-      console.error('Proxy error:', error);
+    if (error || !data?.success) {
+      console.error('Proxy error:', error || 'No success response');
       return false;
     }
 
-    if (!data) {
-      console.error('No data returned from proxy');
-      return false;
-    }
-
-    // Try loading the proxied image
+    // Try loading the image again with CORS proxy
     const proxiedImg = new Image();
     return new Promise((resolve) => {
       proxiedImg.onload = () => resolve(true);
@@ -44,7 +39,7 @@ export const loadImage = async (url: string): Promise<boolean> => {
         console.error('Failed to load proxied image');
         resolve(false);
       };
-      proxiedImg.src = data.url || url;
+      proxiedImg.src = url;
     });
   } catch (error) {
     console.error('Image loading error:', error);
