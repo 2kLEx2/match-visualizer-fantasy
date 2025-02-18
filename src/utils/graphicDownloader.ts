@@ -10,22 +10,29 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // Create a clone of the element first
-    const clone = graphicRef.cloneNode(true) as HTMLDivElement;
-    clone.style.position = 'fixed';
-    clone.style.left = '-9999px';
-    clone.style.transform = 'none';
-    document.body.appendChild(clone);
+    // Create a temporary container for the screenshot
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = `${graphicRef.offsetWidth}px`;
+    container.style.height = `${graphicRef.offsetHeight}px`;
+    document.body.appendChild(container);
 
-    // Pre-load images with CORS proxy
+    // Clone the graphic content
+    const clone = graphicRef.cloneNode(true) as HTMLDivElement;
+    clone.style.transform = 'none';
+    clone.style.width = `${graphicRef.offsetWidth}px`;
+    clone.style.height = `${graphicRef.offsetHeight}px`;
+    container.appendChild(clone);
+
+    // Handle image loading
     const images = clone.getElementsByTagName('img');
     await Promise.all(
       Array.from(images).map(async (img) => {
         if (img.src.startsWith('https://cdn.pandascore.co')) {
           try {
-            // Use Supabase Edge Function as proxy with API key
             const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-image?url=${encodeURIComponent(img.src)}`;
-            img.crossOrigin = 'anonymous';
             const { data: { session } } = await supabase.auth.getSession();
             const response = await fetch(proxyUrl, {
               headers: {
@@ -37,60 +44,64 @@ export const downloadGraphic = async (
             if (response.ok) {
               const blob = await response.blob();
               const objectUrl = URL.createObjectURL(blob);
-              img.src = objectUrl;
-              // Wait for the image to load
+              
+              // Create a new image and wait for it to load
+              const newImg = new Image();
+              newImg.crossOrigin = 'anonymous';
               await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
+                newImg.onload = resolve;
+                newImg.onerror = reject;
+                newImg.src = objectUrl;
               });
+              
+              // Replace the original image
+              img.src = objectUrl;
+              img.crossOrigin = 'anonymous';
             }
           } catch (error) {
             console.error('Error loading image:', error);
-            // Replace failed image with placeholder
             img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
           }
         }
       })
     );
 
-    // Wait a moment for any remaining images to settle
+    // Wait for any transitions or animations to complete
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Generate PNG blob
-    const blob = await domtoimage.toBlob(clone, {
-      quality: 1,
-      bgcolor: '#000000',
-      style: {
-        'transform': 'none',
-        'width': `${graphicRef.offsetWidth}px`,
-        'height': `${graphicRef.offsetHeight}px`
-      },
-      cacheBust: true,
-      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-    });
+    try {
+      // Capture the screenshot
+      const dataUrl = await domtoimage.toPng(container, {
+        quality: 1,
+        bgcolor: '#000000',
+        cacheBust: true,
+        style: {
+          'transform': 'none'
+        }
+      });
 
-    // Remove clone from DOM
-    document.body.removeChild(clone);
+      // Create download link
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'match-graphic.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-    // Create and trigger download
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = 'match-graphic.png';
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      // Cleanup
+      document.body.removeChild(container);
+      Array.from(images).forEach(img => {
+        if (img.src.startsWith('blob:')) {
+          URL.revokeObjectURL(img.src);
+        }
+      });
 
-    // Cleanup any remaining object URLs
-    Array.from(images).forEach(img => {
-      if (img.src.startsWith('blob:')) {
-        URL.revokeObjectURL(img.src);
-      }
-    });
-    
-    onSuccess();
-    return true;
+      onSuccess();
+      return true;
+    } catch (screenshotError) {
+      console.error('Screenshot generation error:', screenshotError);
+      throw screenshotError;
+    }
   } catch (error) {
     console.error('Download error:', error);
     onError(error instanceof Error ? error : new Error('Failed to generate the graphic'));
