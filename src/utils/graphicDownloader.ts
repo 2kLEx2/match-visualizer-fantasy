@@ -10,19 +10,28 @@ export const downloadGraphic = async (
   try {
     const html2canvas = (await import('html2canvas')).default;
     
+    // Set temporary background color for capture
+    const originalBackground = graphicRef.style.background;
+    graphicRef.style.background = '#1a1b1e'; // Dark background to match the UI
+
     const canvas = await html2canvas(graphicRef, {
-      backgroundColor: null,
+      backgroundColor: '#1a1b1e', // Solid background color
       scale: 2, // Higher quality
       logging: false,
       useCORS: true,
-      allowTaint: true
+      allowTaint: true,
+      removeContainer: false,
+      foreignObjectRendering: true
     });
+
+    // Restore original background
+    graphicRef.style.background = originalBackground;
 
     // Convert to blob
     const blob = await new Promise<Blob>((resolve) => {
       canvas.toBlob((blob) => {
         resolve(blob!);
-      }, 'image/png');
+      }, 'image/png', 1.0); // Use maximum quality
     });
 
     // Create download link
