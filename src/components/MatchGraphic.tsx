@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
@@ -28,17 +29,24 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       });
 
       if (error) throw error;
-      if (!data?.data) throw new Error('Invalid response format');
 
-      return `data:image/png;base64,${data.data}`;
+      // Return the raw URL if proxy fails
+      if (!data?.data) {
+        console.warn('Proxy failed, using original URL');
+        return url;
+      }
+
+      // Create the data URL directly
+      const base64String = data.data;
+      return `data:image/png;base64,${base64String}`;
     } catch (error) {
       console.error('Error fetching image:', error);
       toast({
-        title: "Error loading image",
-        description: "Failed to load team logo",
-        variant: "destructive",
+        title: "Warning",
+        description: "Using fallback for team logo",
+        variant: "default",
       });
-      return null;
+      return url; // Return original URL as fallback
     }
   };
 
@@ -98,20 +106,23 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    // Show proxied image if available
-    const proxiedUrl = loadedImages[logo];
-    if (proxiedUrl) {
+    // Show image if available
+    const imageUrl = loadedImages[logo];
+    if (imageUrl) {
       return (
         <img 
-          src={proxiedUrl}
+          src={imageUrl}
           alt={`${teamName} logo`}
           className="w-[24px] h-[24px] object-contain"
-          onError={() => setLoadedImages(prev => ({ ...prev, [logo]: null }))}
+          onError={() => {
+            console.log('Image load error, using fallback');
+            setLoadedImages(prev => ({ ...prev, [logo]: null }));
+          }}
         />
       );
     }
 
-    // Fallback to shield if image failed to load
+    // Fallback to shield
     return (
       <div className="w-[24px] h-[24px] flex items-center justify-center">
         <Shield className="w-5 h-5 text-gray-400" />
@@ -151,16 +162,13 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               }`}
             >
               <div className="px-3 py-2 flex items-center">
-                {/* Match Time */}
                 {settings.showTime && (
                   <div className="text-base font-medium text-gray-400 w-[70px]">
                     {match.time}
                   </div>
                 )}
 
-                {/* Teams Container */}
                 <div className="flex items-center gap-8 flex-1">
-                  {/* Team 1 */}
                   <div className="flex items-center gap-2">
                     {settings.showLogos && renderLogo(match.team1.logo, match.team1.name)}
                     <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
@@ -168,12 +176,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
                     </span>
                   </div>
 
-                  {/* VS Separator */}
                   <span className="text-xs font-medium text-gray-500">
                     vs
                   </span>
 
-                  {/* Team 2 */}
                   <div className="flex items-center gap-2">
                     {settings.showLogos && renderLogo(match.team2.logo, match.team2.name)}
                     <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
@@ -182,7 +188,6 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
                   </div>
                 </div>
 
-                {/* Tournament region indicator */}
                 <div className="text-xs font-medium text-gray-500 uppercase ml-2">
                   {match.tournament}
                 </div>
