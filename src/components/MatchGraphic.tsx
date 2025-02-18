@@ -50,11 +50,10 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   return (
     <div 
       data-graphic="true"
-      className="space-y-4 w-[600px] animate-fade-in relative"
+      className="space-y-4 w-[600px] animate-fade-in relative bg-[#1a1b1e]"
       style={{
         transform: `scale(${scaleFactor})`,
         transformOrigin: 'top left',
-        background: `#1a1b1e`,
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`,
         backgroundPosition: 'top center',
         backgroundRepeat: 'no-repeat',
