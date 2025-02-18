@@ -3,43 +3,33 @@ import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
 import { MatchGraphic } from './MatchGraphic';
 import { Match } from '@/lib/api/matches';
 import html2canvas from 'html2canvas';
-import { Download } from 'lucide-react';
+import { Download, Plus, Trash2 } from 'lucide-react';
 
 interface CustomizerProps {
   selectedMatches: Match[];
 }
 
-interface CustomSettings {
-  showLogos: boolean;
-  showTime: boolean;
-  backgroundColor: string;
-  textColor: string;
-  scale: number;
+interface CustomEntry {
+  id: string;
+  time: string;
+  title: string;
+  subtitle: string;
 }
 
 export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const { toast } = useToast();
   const graphicRef = useRef<HTMLDivElement>(null);
-  const [settings, setSettings] = useState<CustomSettings>({
-    showLogos: true,
-    showTime: true,
-    backgroundColor: '#1a1a1a',
-    textColor: '#ffffff',
-    scale: 100,
-  });
+  const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
 
   const handleDownload = async () => {
-    if (selectedMatches.length === 0) {
+    if (selectedMatches.length === 0 && customEntries.length === 0) {
       toast({
-        title: "No matches selected",
-        description: "Please select at least one match to generate a graphic.",
+        title: "No content to display",
+        description: "Please select matches or add custom entries to generate a graphic.",
         variant: "destructive",
       });
       return;
@@ -48,13 +38,12 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     if (graphicRef.current) {
       try {
         const canvas = await html2canvas(graphicRef.current, {
-          backgroundColor: settings.backgroundColor,
-          scale: 2, // Increase quality
+          backgroundColor: '#1a1a1a',
+          scale: 2,
           logging: false,
           useCORS: true,
           allowTaint: true,
           onclone: (clonedDoc) => {
-            // Ensure all images are loaded before capture
             const images = clonedDoc.getElementsByTagName('img');
             Array.from(images).forEach(img => {
               if (!img.complete) {
@@ -72,7 +61,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
         
         toast({
           title: "Graphic Downloaded",
-          description: "Your match graphic has been downloaded successfully.",
+          description: "Your graphic has been downloaded successfully.",
         });
       } catch (error) {
         console.error('Error generating graphic:', error);
@@ -85,80 +74,105 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     }
   };
 
+  const addCustomEntry = () => {
+    const newEntry: CustomEntry = {
+      id: Date.now().toString(),
+      time: '',
+      title: '',
+      subtitle: '',
+    };
+    setCustomEntries([...customEntries, newEntry]);
+  };
+
+  const removeCustomEntry = (id: string) => {
+    setCustomEntries(customEntries.filter(entry => entry.id !== id));
+  };
+
+  const updateCustomEntry = (id: string, field: keyof CustomEntry, value: string) => {
+    setCustomEntries(customEntries.map(entry => 
+      entry.id === id ? { ...entry, [field]: value } : entry
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label>Display Options</Label>
-            <div className="flex items-center justify-between">
-              <span>Show Team Logos</span>
-              <Switch
-                checked={settings.showLogos}
-                onCheckedChange={(checked) => setSettings({ ...settings, showLogos: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Show Match Time</span>
-              <Switch
-                checked={settings.showTime}
-                onCheckedChange={(checked) => setSettings({ ...settings, showTime: checked })}
-              />
-            </div>
+          <div className="space-y-4">
+            {customEntries.map((entry) => (
+              <div 
+                key={entry.id}
+                className="rounded-md overflow-hidden bg-[#1B2028]/90 transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm"
+              >
+                <div className="px-3 py-2 grid grid-cols-[70px,1fr,auto] gap-4 items-center">
+                  <Input
+                    type="text"
+                    value={entry.time}
+                    onChange={(e) => updateCustomEntry(entry.id, 'time', e.target.value)}
+                    placeholder="Time"
+                    className="bg-transparent border-0 text-gray-400 p-0 text-base font-medium focus-visible:ring-0"
+                  />
+                  <div className="space-y-1">
+                    <Input
+                      type="text"
+                      value={entry.title}
+                      onChange={(e) => updateCustomEntry(entry.id, 'title', e.target.value)}
+                      placeholder="Title"
+                      className="bg-transparent border-0 text-white p-0 text-base font-medium focus-visible:ring-0"
+                    />
+                    <Input
+                      type="text"
+                      value={entry.subtitle}
+                      onChange={(e) => updateCustomEntry(entry.id, 'subtitle', e.target.value)}
+                      placeholder="Subtitle"
+                      className="bg-transparent border-0 text-gray-500 p-0 text-xs uppercase font-medium focus-visible:ring-0"
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeCustomEntry(entry.id)}
+                    className="text-gray-400 hover:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="space-y-2">
-            <Label>Colors</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <span className="text-sm">Background</span>
-                <Input
-                  type="color"
-                  value={settings.backgroundColor}
-                  onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
-                  className="h-10"
-                />
-              </div>
-              <div className="space-y-2">
-                <span className="text-sm">Text</span>
-                <Input
-                  type="color"
-                  value={settings.textColor}
-                  onChange={(e) => setSettings({ ...settings, textColor: e.target.value })}
-                  className="h-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Scale</Label>
-            <Slider
-              value={[settings.scale]}
-              onValueChange={(value) => setSettings({ ...settings, scale: value[0] })}
-              min={50}
-              max={150}
-              step={1}
+          <div className="space-y-4">
+            <Button
+              onClick={addCustomEntry}
+              variant="outline"
               className="w-full"
-            />
-            <span className="text-sm text-muted-foreground">{settings.scale}%</span>
-          </div>
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Custom Entry
+            </Button>
 
-          <Button
-            onClick={handleDownload}
-            className="w-full bg-primary hover:bg-primary/90 text-white"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Download Graphic
-          </Button>
+            <Button
+              onClick={handleDownload}
+              className="w-full bg-primary hover:bg-primary/90 text-white"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Graphic
+            </Button>
+          </div>
         </div>
       </Card>
 
-      {selectedMatches.length > 0 && (
+      {(selectedMatches.length > 0 || customEntries.length > 0) && (
         <div ref={graphicRef} className="mt-6">
           <MatchGraphic
             matches={selectedMatches}
-            settings={settings}
+            settings={{
+              showLogos: true,
+              showTime: true,
+              backgroundColor: '#1a1a1a',
+              textColor: '#ffffff',
+              scale: 100,
+            }}
           />
         </div>
       )}
