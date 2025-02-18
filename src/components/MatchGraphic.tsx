@@ -27,21 +27,23 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
     const allLogos = matches.flatMap(match => [match.team1.logo, match.team2.logo])
       .filter((logo): logo is string => !!logo);
 
-    loadImages(
-      allLogos,
-      (url, state) => {
-        setLoadedImages(prev => ({ ...prev, [url]: state.loaded }));
-        setLoadingStates(prev => ({ ...prev, [url]: state.loading }));
-      },
-      (message) => {
-        toast({
-          title: "Warning",
-          description: message,
-          variant: "default",
-        });
-      }
-    );
-  }, [matches]);
+    if (allLogos.length > 0) {
+      loadImages(
+        allLogos,
+        (url, state) => {
+          setLoadedImages(prev => ({ ...prev, [url]: state.loaded }));
+          setLoadingStates(prev => ({ ...prev, [url]: state.loading }));
+        },
+        (message) => {
+          toast({
+            title: "Warning",
+            description: message,
+            variant: "default",
+          });
+        }
+      );
+    }
+  }, [matches, loadImages, toast]);
 
   const isBIGMatch = (match: Match) => {
     return match.team1.name === "BIG" || match.team2.name === "BIG";
@@ -62,7 +64,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       <div 
         className="w-full h-full p-6"
         style={{
-          backgroundColor: '#1a1b1e',
+          backgroundColor: settings.backgroundColor || '#1a1b1e',
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(https://i.imgur.com/tYDGmvR.png)`,
           backgroundPosition: 'top center',
           backgroundRepeat: 'no-repeat',
@@ -82,7 +84,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               match={match}
               isBIG={isBIGMatch(match)}
               showTime={settings.showTime}
-              showLogos={settings.showLogos}
+              showLogos={true} // Force showLogos to true
               loadedImages={loadedImages}
               loadingStates={loadingStates}
             />
