@@ -41,56 +41,66 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
     if (graphicRef.current) {
       try {
-        // Create a wrapper div to maintain aspect ratio and scaling
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'absolute';
-        wrapper.style.left = '-9999px';
-        wrapper.style.top = '-9999px';
-        wrapper.style.width = '600px'; // Match the original width
-        wrapper.style.transform = 'scale(1)'; // Reset scale for capturing
-        
-        // Clone the graphic element
-        const clone = graphicRef.current.cloneNode(true) as HTMLElement;
-        clone.style.transform = 'scale(1)'; // Reset scale for capturing
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
+        // Pre-load all images including logos and background
+        const allImages = [
+          'https://i.imgur.com/tYDGmvR.png',
+          ...selectedMatches.flatMap(match => [match.team1.logo, match.team2.logo]).filter(Boolean)
+        ];
 
-        // Pre-load the background image
-        const bgImg = new Image();
-        bgImg.src = 'https://i.imgur.com/tYDGmvR.png';
-        
-        await new Promise((resolve) => {
-          bgImg.onload = resolve;
+        await Promise.all(allImages.map(url => {
+          if (!url) return Promise.resolve();
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = resolve;
+            img.src = url;
+          });
+        }));
+
+        // Create a temporary container
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = '600px';
+        container.style.backgroundColor = '#1a1a1a';
+        document.body.appendChild(container);
+
+        // Clone the graphic
+        const clone = graphicRef.current.cloneNode(true) as HTMLElement;
+        clone.style.transform = 'none';
+        container.appendChild(clone);
+
+        // Ensure all images in the clone have crossOrigin set
+        const images = clone.getElementsByTagName('img');
+        Array.from(images).forEach(img => {
+          img.crossOrigin = 'anonymous';
+          img.style.imageRendering = 'high-quality';
         });
 
+        // Create canvas with proper settings
         const canvas = await html2canvas(clone, {
           backgroundColor: '#1a1a1a',
-          scale: 2, // Higher scale for better quality
+          scale: 3, // Increased scale for better quality
           logging: false,
           useCORS: true,
-          allowTaint: true,
-          width: 600, // Match the original width
+          allowTaint: false,
+          foreignObjectRendering: false,
+          imageTimeout: 0,
+          removeContainer: true,
+          width: 600,
           height: clone.offsetHeight,
-          onclone: (clonedDoc) => {
-            const images = clonedDoc.getElementsByTagName('img');
-            Array.from(images).forEach(img => {
-              img.crossOrigin = 'anonymous';
-              if (!img.complete) {
-                img.style.display = 'none';
-              }
-            });
-          }
         });
-        
-        // Clean up the temporary wrapper
-        document.body.removeChild(wrapper);
-        
+
+        // Clean up
+        document.body.removeChild(container);
+
+        // Convert to PNG with proper alpha channel handling
         const image = canvas.toDataURL('image/png', 1.0);
         const link = document.createElement('a');
         link.href = image;
         link.download = 'match-graphic.png';
         link.click();
-        
+
         toast({
           title: "Graphic Downloaded",
           description: "Your graphic has been downloaded successfully.",
