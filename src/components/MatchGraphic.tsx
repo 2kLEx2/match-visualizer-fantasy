@@ -24,7 +24,12 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
 
   const getProxiedImageUrl = async (url: string) => {
     try {
-      const response = await fetch(url, { mode: 'no-cors' });
+      // Use a CORS proxy service
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) {
+        throw new Error('Failed to load image');
+      }
       const blob = await response.blob();
       return URL.createObjectURL(blob);
     } catch (error) {
