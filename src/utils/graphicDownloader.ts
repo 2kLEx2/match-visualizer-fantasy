@@ -3,6 +3,22 @@ import { Match } from '@/lib/api/matches';
 import { supabase } from '@/lib/supabase/client';
 import html2canvas from 'html2canvas';
 
+const waitForImages = (element: HTMLElement): Promise<void> => {
+  const images = Array.from(element.getElementsByTagName('img'));
+  
+  return Promise.all(
+    images.map(img => {
+      if (img.complete) {
+        return Promise.resolve();
+      }
+      return new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject();
+      });
+    })
+  ).then(() => void 0);
+};
+
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
   matches: Match[],
@@ -10,7 +26,10 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // First, capture the HTML element as a canvas
+    // Wait for all images to load first
+    await waitForImages(graphicRef);
+
+    // Then capture the HTML element as a canvas
     const canvas = await html2canvas(graphicRef, {
       backgroundColor: null,
       scale: 2, // Higher quality
@@ -19,6 +38,8 @@ export const downloadGraphic = async (
       height: graphicRef.offsetHeight, // Dynamic height based on content
       windowWidth: 600, // Ensure consistent rendering
       useCORS: true, // Enable cross-origin image loading
+      allowTaint: true, // Allow cross-origin images
+      foreignObjectRendering: true, // Better handling of external content
     });
 
     // Convert canvas to base64 PNG
