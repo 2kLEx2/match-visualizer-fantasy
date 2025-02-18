@@ -9,15 +9,35 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
+    // Wait for next frame to ensure all content is rendered
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    // Clone the element to preserve styles
+    const clone = graphicRef.cloneNode(true) as HTMLDivElement;
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.transform = 'none'; // Remove any transforms that might affect rendering
+    clone.style.width = `${graphicRef.offsetWidth}px`;
+    clone.style.height = `${graphicRef.offsetHeight}px`;
+    document.body.appendChild(clone);
+
     // Configure html2canvas options for better quality
-    const canvas = await html2canvas(graphicRef, {
+    const canvas = await html2canvas(clone, {
       scale: 2, // Increase resolution
       useCORS: true, // Enable cross-origin image loading
       backgroundColor: '#000000', // Match the dark background
       logging: true, // Enable logging for debugging
       allowTaint: true, // Allow cross-origin images
       foreignObjectRendering: true, // Enable foreignObject rendering
+      width: graphicRef.offsetWidth,
+      height: graphicRef.offsetHeight,
+      scrollX: 0,
+      scrollY: 0,
     });
+
+    // Remove the clone after capturing
+    document.body.removeChild(clone);
 
     // Convert to PNG and download
     const pngUrl = canvas.toDataURL('image/png');
