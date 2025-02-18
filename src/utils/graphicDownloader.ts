@@ -9,8 +9,21 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // Wait for next frame to ensure all content is rendered
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    // Pre-load images with CORS proxy
+    const images = graphicRef.getElementsByTagName('img');
+    await Promise.all(
+      Array.from(images).map(async (img) => {
+        if (img.src.startsWith('https://cdn.pandascore.co')) {
+          // Use Supabase Edge Function as proxy
+          const proxyUrl = `/functions/v1/proxy-image?url=${encodeURIComponent(img.src)}`;
+          img.crossOrigin = 'anonymous';
+          img.src = proxyUrl;
+        }
+      })
+    );
+
+    // Wait for a moment to ensure images are loaded
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Create a clone of the element
     const clone = graphicRef.cloneNode(true) as HTMLDivElement;
@@ -27,7 +40,9 @@ export const downloadGraphic = async (
         'transform': 'none',
         'width': `${graphicRef.offsetWidth}px`,
         'height': `${graphicRef.offsetHeight}px`
-      }
+      },
+      cacheBust: true, // Add cache busting
+      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' // Fallback for failed images
     });
 
     // Remove clone
