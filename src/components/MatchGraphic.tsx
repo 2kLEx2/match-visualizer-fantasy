@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { Shield } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 interface MatchGraphicProps {
   matches: Match[];
@@ -18,27 +19,60 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
+  const getProxiedImageUrl = async (url: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('proxy-image', {
+        body: { url }
+      });
+      
+      if (error) {
+        console.error('Error proxying image:', error);
+        return null;
+      }
+      
+      return data?.imageUrl || null;
+    } catch (error) {
+      console.error('Error proxying image:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    matches.forEach(match => {
-      if (match.team1.logo) {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
-        img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
-        img.src = match.team1.logo;
+    const loadImages = async () => {
+      for (const match of matches) {
+        if (match.team1.logo) {
+          try {
+            const proxiedUrl = await getProxiedImageUrl(match.team1.logo);
+            if (proxiedUrl) {
+              const img = new Image();
+              img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: true }));
+              img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team1.logo!]: false }));
+              img.src = proxiedUrl;
+            }
+          } catch (error) {
+            console.error(`Failed to load logo for ${match.team1.name}:`, error);
+          }
+        }
+        if (match.team2.logo) {
+          try {
+            const proxiedUrl = await getProxiedImageUrl(match.team2.logo);
+            if (proxiedUrl) {
+              const img = new Image();
+              img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
+              img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
+              img.src = proxiedUrl;
+            }
+          } catch (error) {
+            console.error(`Failed to load logo for ${match.team2.name}:`, error);
+          }
+        }
       }
-      if (match.team2.logo) {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: true }));
-        img.onerror = () => setLoadedImages(prev => ({ ...prev, [match.team2.logo!]: false }));
-        img.src = match.team2.logo;
-      }
-    });
+    };
+
+    loadImages();
   }, [matches]);
 
-  const renderLogo = (logo: string | undefined, teamName: string) => {
-    // Show Shield icon if no logo or if logo failed to load
+  const renderLogo = async (logo: string | undefined, teamName: string) => {
     if (!logo || loadedImages[logo] === false) {
       return (
         <div className="w-[24px] h-[24px] flex items-center justify-center">
@@ -56,16 +90,32 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       );
     }
 
-    // Show logo if it loaded successfully
-    return (
-      <img 
-        src={logo}
-        alt={`${teamName} logo`}
-        className="w-[24px] h-[24px] object-contain"
-        crossOrigin="anonymous"
-        onError={() => setLoadedImages(prev => ({ ...prev, [logo]: false }))}
-      />
-    );
+    try {
+      const proxiedUrl = await getProxiedImageUrl(logo);
+      if (!proxiedUrl) {
+        return (
+          <div className="w-[24px] h-[24px] flex items-center justify-center">
+            <Shield className="w-5 h-5 text-gray-400" />
+          </div>
+        );
+      }
+
+      return (
+        <img 
+          src={proxiedUrl}
+          alt={`${teamName} logo`}
+          className="w-[24px] h-[24px] object-contain"
+          onError={() => setLoadedImages(prev => ({ ...prev, [logo]: false }))}
+        />
+      );
+    } catch (error) {
+      console.error(`Error loading image for ${teamName}:`, error);
+      return (
+        <div className="w-[24px] h-[24px] flex items-center justify-center">
+          <Shield className="w-5 h-5 text-gray-400" />
+        </div>
+      );
+    }
   };
 
   const isBIGMatch = (match: Match) => {
