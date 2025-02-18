@@ -117,9 +117,15 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     team2: { name: '', logo: '' },
     tournament: '',
     date: new Date().toISOString(),
+    isCustomEntry: true, // Mark as custom entry
   }));
 
-  const allMatches = [...selectedMatches, ...customMatches];
+  // Combine and sort all matches by time
+  const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
+    const timeA = parseInt(a.time.replace(':', ''));
+    const timeB = parseInt(b.time.replace(':', ''));
+    return timeA - timeB;
+  });
 
   return (
     <div className="space-y-6">
@@ -194,7 +200,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           <MatchGraphic
             matches={allMatches}
             settings={{
-              showLogos: true,
+              showLogos: false,
               showTime: true,
               backgroundColor: '#1a1a1a',
               textColor: '#ffffff',

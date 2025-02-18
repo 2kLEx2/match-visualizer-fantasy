@@ -20,6 +20,8 @@ export const MatchRow = ({
   loadedImages,
   loadingStates 
 }: MatchRowProps) => {
+  const isCustomEntry = 'isCustomEntry' in match && match.isCustomEntry;
+
   return (
     <div className="space-y-1">
       <div 
@@ -36,7 +38,7 @@ export const MatchRow = ({
 
           <div className="flex items-center gap-8 flex-1">
             <div className="flex items-center gap-2">
-              {showLogos && (
+              {showLogos && !isCustomEntry && (
                 <TeamLogo 
                   logo={match.team1.logo}
                   teamName={match.team1.name}
@@ -49,31 +51,37 @@ export const MatchRow = ({
               </span>
             </div>
 
-            <span className="text-xs font-medium text-gray-500">
-              vs
-            </span>
+            {!isCustomEntry && (
+              <>
+                <span className="text-xs font-medium text-gray-500">
+                  vs
+                </span>
 
-            <div className="flex items-center gap-2">
-              {showLogos && (
-                <TeamLogo 
-                  logo={match.team2.logo}
-                  teamName={match.team2.name}
-                  isLoading={loadingStates[match.team2.logo || '']}
-                  isLoaded={loadedImages[match.team2.logo || '']}
-                />
-              )}
-              <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
-                {match.team2.name}
-              </span>
+                <div className="flex items-center gap-2">
+                  {showLogos && (
+                    <TeamLogo 
+                      logo={match.team2.logo}
+                      teamName={match.team2.name}
+                      isLoading={loadingStates[match.team2.logo || '']}
+                      isLoaded={loadedImages[match.team2.logo || '']}
+                    />
+                  )}
+                  <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
+                    {match.team2.name}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {!isCustomEntry && (
+            <div className="text-xs font-medium text-gray-500 uppercase ml-2">
+              {match.tournament}
             </div>
-          </div>
-
-          <div className="text-xs font-medium text-gray-500 uppercase ml-2">
-            {match.tournament}
-          </div>
+          )}
         </div>
       </div>
-      {isBIG && (
+      {isBIG && !isCustomEntry && (
         <div className="text-xs text-primary font-medium italic pl-[70px]">
           Anwesenheitspflicht
         </div>
