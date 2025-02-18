@@ -1,6 +1,5 @@
 
 import { Match } from '@/lib/api/matches';
-import { supabase } from '@/lib/supabase/client';
 
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
@@ -9,45 +8,25 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
-    // Get computed styles
-    const styles = window.getComputedStyle(graphicRef);
-    const cssProperties = Array.from(styles).reduce((acc, prop) => {
-      return acc + `${prop}: ${styles.getPropertyValue(prop)};`;
-    }, '');
-
-    // Get CSS from stylesheets
-    const cssRules = Array.from(document.styleSheets)
-      .filter(sheet => sheet.href === null || sheet.href.startsWith(window.location.origin))
-      .reduce((acc, sheet) => {
-        try {
-          return acc + Array.from(sheet.cssRules)
-            .map(rule => rule.cssText)
-            .join('\n');
-        } catch (e) {
-          console.warn('Could not read stylesheet rules', e);
-          return acc;
-        }
-      }, '');
-
-    const { data: { session } } = await supabase.auth.getSession();
+    const html2canvas = (await import('html2canvas')).default;
     
-    // Call the render function
-    const response = await supabase.functions.invoke('render-graphic', {
-      body: {
-        html: graphicRef.outerHTML,
-        css: cssRules + `.graphic-root { ${cssProperties} }`
-      }
+    const canvas = await html2canvas(graphicRef, {
+      backgroundColor: null,
+      scale: 2, // Higher quality
+      logging: false,
+      useCORS: true,
+      allowTaint: true
     });
 
-    if (!response.data) {
-      throw new Error('Failed to generate image');
-    }
+    // Convert to blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob!);
+      }, 'image/png');
+    });
 
-    // Convert the response to a blob
-    const blob = await response.data.blob();
+    // Create download link
     const url = URL.createObjectURL(blob);
-
-    // Download the image
     const link = document.createElement('a');
     link.href = url;
     link.download = 'match-graphic.png';
