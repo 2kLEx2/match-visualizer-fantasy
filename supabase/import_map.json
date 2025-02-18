@@ -1,7 +1,6 @@
 
 {
   "imports": {
-    "https://deno.land/std@0.168.0/": "https://deno.land/std@0.168.0/",
-    "puppeteer": "https://deno.land/x/puppeteer@16.2.0/mod.ts"
+    "https://deno.land/std@0.168.0/": "https://deno.land/std@0.168.0/"
   }
 }

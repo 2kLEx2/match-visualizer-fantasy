@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts"
+import { Browser } from 'https://deno.land/x/puppeteer@16.2.0/vendor/puppeteer-core/puppeteer/common/Browser.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -16,10 +15,8 @@ serve(async (req) => {
   try {
     const { html, css } = await req.json()
 
-    // Launch browser
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox']
-    })
+    // Create a new Chrome instance
+    const browser = await Deno.createBrowser()
     const page = await browser.newPage()
 
     // Set viewport
@@ -41,19 +38,14 @@ serve(async (req) => {
       </html>
     `)
 
-    // Wait for images to load
-    await page.evaluate(() => Promise.all(
-      Array.from(document.images)
-        .filter(img => !img.complete)
-        .map(img => new Promise(resolve => {
-          img.onload = img.onerror = resolve
-        }))
-    ))
+    // Wait for all content to load
+    await page.waitForLoadState('networkidle')
 
     // Take screenshot
     const screenshot = await page.screenshot({
       type: 'png',
-      omitBackground: true
+      omitBackground: true,
+      fullPage: true
     })
 
     await browser.close()
