@@ -1,6 +1,6 @@
 
 import { Match } from '@/lib/api/matches';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image';
 
 export const downloadGraphic = async (
   graphicRef: HTMLDivElement,
@@ -12,41 +12,36 @@ export const downloadGraphic = async (
     // Wait for next frame to ensure all content is rendered
     await new Promise(resolve => requestAnimationFrame(resolve));
 
-    // Clone the element to preserve styles
+    // Create a clone of the element
     const clone = graphicRef.cloneNode(true) as HTMLDivElement;
     clone.style.position = 'fixed';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.transform = 'none'; // Remove any transforms that might affect rendering
-    clone.style.width = `${graphicRef.offsetWidth}px`;
-    clone.style.height = `${graphicRef.offsetHeight}px`;
+    clone.style.left = '-9999px';
+    clone.style.transform = 'none';
     document.body.appendChild(clone);
 
-    // Configure html2canvas options for better quality
-    const canvas = await html2canvas(clone, {
-      scale: 2, // Increase resolution
-      useCORS: true, // Enable cross-origin image loading
-      backgroundColor: '#000000', // Match the dark background
-      logging: true, // Enable logging for debugging
-      allowTaint: true, // Allow cross-origin images
-      foreignObjectRendering: true, // Enable foreignObject rendering
-      width: graphicRef.offsetWidth,
-      height: graphicRef.offsetHeight,
-      scrollX: 0,
-      scrollY: 0,
+    // Generate PNG blob
+    const blob = await domtoimage.toBlob(clone, {
+      quality: 1,
+      bgcolor: '#000000',
+      style: {
+        'transform': 'none',
+        'width': `${graphicRef.offsetWidth}px`,
+        'height': `${graphicRef.offsetHeight}px`
+      }
     });
 
-    // Remove the clone after capturing
+    // Remove clone
     document.body.removeChild(clone);
 
-    // Convert to PNG and download
-    const pngUrl = canvas.toDataURL('image/png');
+    // Create download link
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = 'match-graphic.png';
-    link.href = pngUrl;
+    link.href = url;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     onSuccess();
     return true;
