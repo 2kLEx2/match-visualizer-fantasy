@@ -25,6 +25,28 @@ interface RenderRequest {
   };
 }
 
+// Helper function to draw rounded rectangle
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -61,11 +83,10 @@ Deno.serve(async (req) => {
       const y = 120 + i * 80;
       console.log(`Drawing match ${i + 1}:`, match.team1.name, 'vs', match.team2.name);
 
-      // Draw match container
+      // Draw match container with rounded corners
       ctx.fillStyle = '#1B2028';
       ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.roundRect(10, y - 35, canvas.width - 20, 60, 8);
+      roundedRect(ctx, 10, y - 35, canvas.width - 20, 60, 8);
       ctx.fill();
       ctx.globalAlpha = 1;
 
