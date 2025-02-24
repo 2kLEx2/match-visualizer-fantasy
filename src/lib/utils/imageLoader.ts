@@ -25,30 +25,36 @@ export const loadImage = async (url: string): Promise<boolean> => {
     const thumbnailUrl = convertToThumbnail(url);
     console.log('Attempting to load image:', thumbnailUrl);
 
-    // Try loading through proxy first
-    const { data, error } = await supabase.functions.invoke('proxy-image', {
-      body: { url: thumbnailUrl }
+    // Try loading through proxy
+    const response = await supabase.functions.invoke('proxy-image', {
+      body: { url: thumbnailUrl },
+      responseType: 'arrayBuffer'
     });
 
-    if (!error && data) {
-      // If proxy succeeds, try loading the image
-      const img = new Image();
-      return new Promise((resolve) => {
-        img.onload = () => {
-          console.log('Successfully loaded image:', thumbnailUrl);
-          resolve(true);
-        };
-        img.onerror = () => {
-          console.error('Failed to load image after proxy:', thumbnailUrl);
-          resolve(false);
-        };
-        img.crossOrigin = "anonymous";
-        img.src = thumbnailUrl;
-      });
-    } else {
-      console.error('Proxy request failed:', error);
+    if (response.error) {
+      console.error('Proxy request failed:', response.error);
       return false;
     }
+
+    // Create a blob URL from the proxied data
+    const blob = new Blob([response.data], { type: 'image/png' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Try loading the blob URL
+    const img = new Image();
+    return new Promise((resolve) => {
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+        console.log('Successfully loaded image:', thumbnailUrl);
+        resolve(true);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+        console.error('Failed to load image:', thumbnailUrl);
+        resolve(false);
+      };
+      img.src = blobUrl;
+    });
   } catch (error) {
     console.error('Image loading error:', error);
     return false;

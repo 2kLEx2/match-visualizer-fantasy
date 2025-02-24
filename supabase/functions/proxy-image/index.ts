@@ -22,21 +22,17 @@ serve(async (req) => {
 
     console.log('Proxying image:', url)
 
-    const imageResponse = await fetch(url, {
-      headers: {
-        'Accept': 'image/*'
-      }
-    })
+    const imageResponse = await fetch(url)
 
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`)
     }
 
-    // Get the image data and content type
-    const imageData = await imageResponse.blob()
+    // Get the image data
+    const imageData = await imageResponse.arrayBuffer()
     const contentType = imageResponse.headers.get('content-type') || 'image/png'
 
-    // Return the image with CORS headers and success flag
+    // Return the image with CORS headers
     return new Response(imageData, {
       headers: {
         ...corsHeaders,
@@ -47,7 +43,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Proxy error:', error)
     return new Response(
-      JSON.stringify({ error: error.message, success: false }),
+      JSON.stringify({ error: error.message }),
       {
         status: 500,
         headers: {
