@@ -26,18 +26,18 @@ export const loadImage = async (url: string): Promise<boolean> => {
     console.log('Attempting to load image:', thumbnailUrl);
 
     // Try loading through proxy
-    const response = await supabase.functions.invoke('proxy-image', {
-      body: { url: thumbnailUrl },
-      responseType: 'arrayBuffer'
+    const { data, error } = await supabase.functions.invoke('proxy-image', {
+      body: { url: thumbnailUrl }
     });
 
-    if (response.error) {
-      console.error('Proxy request failed:', response.error);
+    if (error || !data) {
+      console.error('Proxy request failed:', error);
       return false;
     }
 
-    // Create a blob URL from the proxied data
-    const blob = new Blob([response.data], { type: 'image/png' });
+    // Create a blob URL from the base64 data
+    const response = await fetch(`data:image/png;base64,${data}`);
+    const blob = await response.blob();
     const blobUrl = URL.createObjectURL(blob);
 
     // Try loading the blob URL

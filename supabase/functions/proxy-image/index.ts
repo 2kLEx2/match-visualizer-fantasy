@@ -29,15 +29,14 @@ serve(async (req) => {
     }
 
     // Get the image data
-    const imageData = await imageResponse.arrayBuffer()
-    const contentType = imageResponse.headers.get('content-type') || 'image/png'
+    const arrayBuffer = await imageResponse.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
-    // Return the image with CORS headers
-    return new Response(imageData, {
+    // Return the base64 encoded image data
+    return new Response(JSON.stringify({ data: base64 }), {
       headers: {
         ...corsHeaders,
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600'
+        'Content-Type': 'application/json'
       }
     })
   } catch (error) {
