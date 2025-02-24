@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
@@ -6,11 +5,13 @@ type ImageLoadResult = {
   loading: boolean;
 };
 
+/**
+ * Converts an image URL to a thumbnail version for better performance.
+ */
 const convertToThumbnail = (url: string): string => {
   try {
     const urlParts = url.split('/');
     const fileName = urlParts[urlParts.length - 1];
-    // Replace the last part of the URL with the thumbnail version
     urlParts[urlParts.length - 1] = `thumb_${fileName}`;
     return urlParts.join('/');
   } catch (error) {
@@ -19,13 +20,16 @@ const convertToThumbnail = (url: string): string => {
   }
 };
 
+/**
+ * Loads an image via the Supabase proxy to handle CORS issues.
+ */
 export const loadImage = async (url: string): Promise<boolean> => {
   try {
-    // Convert to thumbnail version for better performance
+    // Convert to a thumbnail version for performance benefits
     const thumbnailUrl = convertToThumbnail(url);
     console.log('Attempting to load image:', thumbnailUrl);
 
-    // Try loading through proxy
+    // Fetch image through the Supabase proxy function
     const { data, error } = await supabase.functions.invoke('proxy-image', {
       body: { url: thumbnailUrl }
     });
@@ -35,36 +39,39 @@ export const loadImage = async (url: string): Promise<boolean> => {
       return false;
     }
 
-    // Create a blob URL from the base64 data
+    // Convert base64 response to a Blob and create a temporary URL
     try {
       const blob = await fetch(data.imageData).then(r => r.blob());
       const blobUrl = URL.createObjectURL(blob);
 
-      // Try loading the blob URL
-      const img = new Image();
+      // Load image and handle success/failure
       return new Promise((resolve) => {
+        const img = new Image();
         img.onload = () => {
-          URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+          URL.revokeObjectURL(blobUrl); // Cleanup
           console.log('Successfully loaded image:', thumbnailUrl);
           resolve(true);
         };
         img.onerror = () => {
-          URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+          URL.revokeObjectURL(blobUrl); // Cleanup
           console.error('Failed to load image:', thumbnailUrl);
           resolve(false);
         };
         img.src = blobUrl;
       });
-    } catch (error) {
-      console.error('Error creating blob:', error);
+    } catch (blobError) {
+      console.error('Error creating blob:', blobError);
       return false;
     }
-  } catch (error) {
-    console.error('Image loading error:', error);
+  } catch (fetchError) {
+    console.error('Image loading error:', fetchError);
     return false;
   }
 };
 
+/**
+ * Handles bulk image loading while updating state callbacks.
+ */
 export const useImageLoader = () => {
   const loadImages = async (
     urls: string[],
