@@ -30,31 +30,35 @@ export const loadImage = async (url: string): Promise<boolean> => {
       body: { url: thumbnailUrl }
     });
 
-    if (error || !data) {
+    if (error || !data || !data.imageData) {
       console.error('Proxy request failed:', error);
       return false;
     }
 
     // Create a blob URL from the base64 data
-    const response = await fetch(`data:image/png;base64,${data}`);
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
+    try {
+      const blob = await fetch(data.imageData).then(r => r.blob());
+      const blobUrl = URL.createObjectURL(blob);
 
-    // Try loading the blob URL
-    const img = new Image();
-    return new Promise((resolve) => {
-      img.onload = () => {
-        URL.revokeObjectURL(blobUrl); // Clean up the blob URL
-        console.log('Successfully loaded image:', thumbnailUrl);
-        resolve(true);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(blobUrl); // Clean up the blob URL
-        console.error('Failed to load image:', thumbnailUrl);
-        resolve(false);
-      };
-      img.src = blobUrl;
-    });
+      // Try loading the blob URL
+      const img = new Image();
+      return new Promise((resolve) => {
+        img.onload = () => {
+          URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+          console.log('Successfully loaded image:', thumbnailUrl);
+          resolve(true);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl); // Clean up the blob URL
+          console.error('Failed to load image:', thumbnailUrl);
+          resolve(false);
+        };
+        img.src = blobUrl;
+      });
+    } catch (error) {
+      console.error('Error creating blob:', error);
+      return false;
+    }
   } catch (error) {
     console.error('Image loading error:', error);
     return false;

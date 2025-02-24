@@ -31,18 +31,29 @@ serve(async (req) => {
     // Get the image data
     const arrayBuffer = await imageResponse.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const contentType = imageResponse.headers.get('content-type') || 'image/png'
+    
+    // Return the base64 encoded image data with proper data URL format
+    const imageData = `data:${contentType};base64,${base64}`
 
-    // Return the base64 encoded image data
-    return new Response(JSON.stringify({ data: base64 }), {
+    // Return as JSON with the full data URL
+    return new Response(JSON.stringify({ 
+      imageData,
+      success: true 
+    }), {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=3600'
       }
     })
   } catch (error) {
     console.error('Proxy error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false 
+      }),
       {
         status: 500,
         headers: {
