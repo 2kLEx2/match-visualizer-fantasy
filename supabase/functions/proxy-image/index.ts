@@ -5,17 +5,25 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
 // Start the Deno HTTP server
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
+    // Ensure the request method is POST or GET
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Parse request JSON body
     const { url } = await req.json();
     if (!url) {
@@ -44,6 +52,7 @@ serve(async (req) => {
       imageData,
       success: true 
     }), {
+      status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
