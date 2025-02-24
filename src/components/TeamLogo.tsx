@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Shield } from 'lucide-react';
 
@@ -10,7 +9,10 @@ interface TeamLogoProps {
 }
 
 export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps) => {
-  if (!logo || (!isLoaded && !isLoading)) {
+  // Ensure `logo` is a valid string
+  const safeLogo = typeof logo === "string" && logo.trim() !== "" ? logo : null;
+
+  if (!safeLogo || (!isLoaded && !isLoading)) {
     return (
       <div className="w-[24px] h-[24px] flex items-center justify-center">
         <Shield className="w-5 h-5 text-gray-400" />
@@ -28,10 +30,14 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
 
   return (
     <img 
-      src={logo}
+      src={safeLogo}
       alt={`${teamName} logo`}
       className="w-[24px] h-[24px] object-contain"
       crossOrigin="anonymous"
+      onError={(e) => {
+        e.currentTarget.src = "/placeholder.svg"; // Fallback image if logo fails to load
+        console.error(`Failed to load team logo: ${safeLogo}`);
+      }}
     />
   );
 };
