@@ -6,15 +6,32 @@ type ImageLoadResult = {
   loading: boolean;
 };
 
+const convertToThumbnail = (url: string): string => {
+  try {
+    const urlParts = url.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    // Replace the last part of the URL with the thumbnail version
+    urlParts[urlParts.length - 1] = `thumb_${fileName}`;
+    return urlParts.join('/');
+  } catch (error) {
+    console.error('Error converting URL to thumbnail:', error);
+    return url; // Return original URL if conversion fails
+  }
+};
+
 export const loadImage = async (url: string): Promise<boolean> => {
   try {
+    // Convert to thumbnail version for better performance
+    const thumbnailUrl = convertToThumbnail(url);
+    console.log('Loading thumbnail:', thumbnailUrl);
+
     // First try loading the image directly
     const img = new Image();
     const directLoadPromise = new Promise<boolean>((resolve) => {
       img.onload = () => resolve(true);
       img.onerror = () => resolve(false);
       img.crossOrigin = "anonymous";
-      img.src = url;
+      img.src = thumbnailUrl;
     });
 
     const directResult = await directLoadPromise;
@@ -22,11 +39,11 @@ export const loadImage = async (url: string): Promise<boolean> => {
     
     // If direct loading fails, try using the proxy silently
     const { data, error } = await supabase.functions.invoke('proxy-image', {
-      body: { url }
+      body: { url: thumbnailUrl }
     });
 
     if (error || !data?.success) {
-      console.error('Failed to load image through proxy:', url);
+      console.error('Failed to load image through proxy:', thumbnailUrl);
       return false;
     }
 
@@ -35,11 +52,11 @@ export const loadImage = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       proxiedImg.onload = () => resolve(true);
       proxiedImg.onerror = () => {
-        console.error('Failed to load proxied image:', url);
+        console.error('Failed to load proxied image:', thumbnailUrl);
         resolve(false);
       };
       proxiedImg.crossOrigin = "anonymous";
-      proxiedImg.src = url;
+      proxiedImg.src = thumbnailUrl;
     });
   } catch (error) {
     console.error('Image loading error:', error);
