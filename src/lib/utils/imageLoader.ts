@@ -23,41 +23,32 @@ export const loadImage = async (url: string): Promise<boolean> => {
   try {
     // Convert to thumbnail version for better performance
     const thumbnailUrl = convertToThumbnail(url);
-    console.log('Loading thumbnail:', thumbnailUrl);
+    console.log('Attempting to load image:', thumbnailUrl);
 
-    // First try loading the image directly
-    const img = new Image();
-    const directLoadPromise = new Promise<boolean>((resolve) => {
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.crossOrigin = "anonymous";
-      img.src = thumbnailUrl;
-    });
-
-    const directResult = await directLoadPromise;
-    if (directResult) return true;
-    
-    // If direct loading fails, try using the proxy silently
+    // Try loading through proxy first
     const { data, error } = await supabase.functions.invoke('proxy-image', {
       body: { url: thumbnailUrl }
     });
 
-    if (error || !data?.success) {
-      console.error('Failed to load image through proxy:', thumbnailUrl);
+    if (!error && data) {
+      // If proxy succeeds, try loading the image
+      const img = new Image();
+      return new Promise((resolve) => {
+        img.onload = () => {
+          console.log('Successfully loaded image:', thumbnailUrl);
+          resolve(true);
+        };
+        img.onerror = () => {
+          console.error('Failed to load image after proxy:', thumbnailUrl);
+          resolve(false);
+        };
+        img.crossOrigin = "anonymous";
+        img.src = thumbnailUrl;
+      });
+    } else {
+      console.error('Proxy request failed:', error);
       return false;
     }
-
-    // Try loading the image again with CORS proxy
-    const proxiedImg = new Image();
-    return new Promise((resolve) => {
-      proxiedImg.onload = () => resolve(true);
-      proxiedImg.onerror = () => {
-        console.error('Failed to load proxied image:', thumbnailUrl);
-        resolve(false);
-      };
-      proxiedImg.crossOrigin = "anonymous";
-      proxiedImg.src = thumbnailUrl;
-    });
   } catch (error) {
     console.error('Image loading error:', error);
     return false;
@@ -88,7 +79,7 @@ export const useImageLoader = () => {
           onError(`Unable to load image: ${url}`);
         }
       } catch (error) {
-        console.error('Error loading image:', url, error);
+        console.error('Error loading image:', error);
         onLoadStateChange(url, { loaded: false, loading: false });
         onError(`Failed to load image: ${url}`);
       }

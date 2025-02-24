@@ -1,80 +1,53 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.fresh.dev/server'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: corsHeaders 
-    })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const url = new URL(req.url).searchParams.get('url');
-    const apiKey = req.headers.get('apikey');
-
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing API key',
-          hint: 'Make sure to include the Supabase API key in the request headers'
-        }), 
-        { 
-          status: 401,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-    }
-
+    const { url } = await req.json()
     if (!url) {
-      return new Response(
-        JSON.stringify({ error: 'Missing URL parameter' }), 
-        { 
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
+      throw new Error('URL is required')
     }
 
-    // Fetch the image
-    const imageResponse = await fetch(url);
+    console.log('Proxying image:', url)
+
+    const imageResponse = await fetch(url, {
+      headers: {
+        'Accept': 'image/*'
+      }
+    })
+
     if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`)
     }
 
-    // Get the image data
-    const imageData = await imageResponse.arrayBuffer();
-    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+    // Get the image data and content type
+    const imageData = await imageResponse.blob()
+    const contentType = imageResponse.headers.get('content-type') || 'image/png'
 
-    // Return the image directly with proper headers
+    // Return the image with CORS headers
     return new Response(imageData, {
       headers: {
         ...corsHeaders,
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=3600'
       }
-    });
-    
+    })
   } catch (error) {
+    console.error('Proxy error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false
-      }),
-      { 
+      JSON.stringify({ error: error.message }),
+      {
         status: 500,
         headers: {
           ...corsHeaders,
