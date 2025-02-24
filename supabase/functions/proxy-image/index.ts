@@ -1,5 +1,6 @@
 
-import { serve } from 'https://deno.fresh.dev/server'
+// Correct import for Deno serve
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,7 +36,7 @@ serve(async (req) => {
     const imageData = await imageResponse.blob()
     const contentType = imageResponse.headers.get('content-type') || 'image/png'
 
-    // Return the image with CORS headers
+    // Return the image with CORS headers and success flag
     return new Response(imageData, {
       headers: {
         ...corsHeaders,
@@ -46,7 +47,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Proxy error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, success: false }),
       {
         status: 500,
         headers: {
