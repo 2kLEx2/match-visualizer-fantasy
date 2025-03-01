@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
@@ -34,35 +35,29 @@ export const loadImage = async (url: string): Promise<boolean> => {
       body: { url: thumbnailUrl }
     });
 
-    if (error || !data || !data.imageData) {
+    if (error) {
       console.error('Proxy request failed:', error);
       return false;
     }
 
-    // Convert base64 response to a Blob and create a temporary URL
-    try {
-      const blob = await fetch(data.imageData).then(r => r.blob());
-      const blobUrl = URL.createObjectURL(blob);
-
-      // Load image and handle success/failure
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          URL.revokeObjectURL(blobUrl); // Cleanup
-          console.log('Successfully loaded image:', thumbnailUrl);
-          resolve(true);
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(blobUrl); // Cleanup
-          console.error('Failed to load image:', thumbnailUrl);
-          resolve(false);
-        };
-        img.src = blobUrl;
-      });
-    } catch (blobError) {
-      console.error('Error creating blob:', blobError);
+    if (!data || !data.success || !data.imageData) {
+      console.error('Invalid response from proxy:', data);
       return false;
     }
+
+    // Create an image element and load the data URL
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        console.log('Successfully loaded image:', thumbnailUrl);
+        resolve(true);
+      };
+      img.onerror = (e) => {
+        console.error('Failed to load image after proxy:', thumbnailUrl, e);
+        resolve(false);
+      };
+      img.src = data.imageData;
+    });
   } catch (fetchError) {
     console.error('Image loading error:', fetchError);
     return false;
