@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Shield, ImageOff } from 'lucide-react';
 
 interface TeamLogoProps {
@@ -12,7 +12,7 @@ interface TeamLogoProps {
 export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps) => {
   // Ensure `logo` is a valid string
   const safeLogo = typeof logo === "string" && logo.trim() !== "" ? logo : null;
-
+  
   // Loading state
   if (isLoading) {
     return (
@@ -38,6 +38,7 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
       alt={`${teamName} logo`}
       className="w-[24px] h-[24px] object-contain"
       crossOrigin="anonymous"
+      loading="lazy"
       onError={(e) => {
         e.currentTarget.src = "/placeholder.svg"; // Fallback image if logo fails to load
         console.error(`Failed to load team logo: ${safeLogo}`);
