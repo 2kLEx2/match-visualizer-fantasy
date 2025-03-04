@@ -11,13 +11,18 @@ type ImageLoadResult = {
  */
 const convertToThumbnail = (url: string): string => {
   try {
+    if (!url || typeof url !== 'string') return '';
+    
+    // Check if URL already contains 'thumb_'
+    if (url.includes('thumb_')) return url;
+    
     const urlParts = url.split('/');
     const fileName = urlParts[urlParts.length - 1];
     urlParts[urlParts.length - 1] = `thumb_${fileName}`;
     return urlParts.join('/');
   } catch (error) {
     console.error('Error converting URL to thumbnail:', error);
-    return url; // Return original URL if conversion fails
+    return url || ''; // Return original URL if conversion fails
   }
 };
 
@@ -26,6 +31,12 @@ const convertToThumbnail = (url: string): string => {
  */
 export const loadImage = async (url: string): Promise<boolean> => {
   try {
+    // Safety check for invalid URLs
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+      console.warn('Invalid image URL:', url);
+      return false;
+    }
+    
     // Convert to a thumbnail version for performance benefits
     const thumbnailUrl = convertToThumbnail(url);
     console.log('Attempting to load image:', thumbnailUrl);
@@ -49,11 +60,11 @@ export const loadImage = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        console.log('Successfully loaded image:', thumbnailUrl);
+        console.log('Successfully loaded image via proxy');
         resolve(true);
       };
       img.onerror = (e) => {
-        console.error('Failed to load image after proxy:', thumbnailUrl, e);
+        console.error('Failed to load image after proxy:', e);
         resolve(false);
       };
       img.src = data.imageData;
@@ -73,11 +84,17 @@ export const useImageLoader = () => {
     onLoadStateChange: (url: string, state: ImageLoadResult) => void,
     onError: (message: string) => void
   ) => {
-    console.log('Starting to load images:', urls);
+    if (!urls || !Array.isArray(urls)) {
+      console.warn('No valid URLs provided to loadImages');
+      return;
+    }
     
-    for (const url of urls) {
-      if (!url) continue;
-      
+    console.log('Starting to load images:', urls.length);
+    
+    // Filter out invalid URLs
+    const validUrls = urls.filter(url => url && typeof url === 'string' && url.startsWith('http'));
+    
+    for (const url of validUrls) {
       try {
         console.log('Loading image:', url);
         onLoadStateChange(url, { loaded: false, loading: true });

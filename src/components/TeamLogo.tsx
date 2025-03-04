@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, ImageOff } from 'lucide-react';
 
 interface TeamLogoProps {
   logo?: string;
@@ -12,14 +13,7 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
   // Ensure `logo` is a valid string
   const safeLogo = typeof logo === "string" && logo.trim() !== "" ? logo : null;
 
-  if (!safeLogo || (!isLoaded && !isLoading)) {
-    return (
-      <div className="w-[24px] h-[24px] flex items-center justify-center">
-        <Shield className="w-5 h-5 text-gray-400" />
-      </div>
-    );
-  }
-
+  // Loading state
   if (isLoading) {
     return (
       <div className="w-[24px] h-[24px] flex items-center justify-center">
@@ -28,6 +22,16 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
     );
   }
 
+  // Error state or no logo provided
+  if (!safeLogo || !isLoaded) {
+    return (
+      <div className="w-[24px] h-[24px] flex items-center justify-center">
+        <Shield className="w-5 h-5 text-gray-400" />
+      </div>
+    );
+  }
+
+  // Successfully loaded logo
   return (
     <img 
       src={safeLogo}
