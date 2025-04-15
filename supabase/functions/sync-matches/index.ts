@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const url = new URL('https://api.pandascore.co/csgo/matches/upcoming')
     url.searchParams.append('range[begin_at]', `${fromDate},${toDate}`)
     url.searchParams.append('sort', 'begin_at')
-    url.searchParams.append('per_page', '50')
+    url.searchParams.append('per_page', '100') // Increased to get more matches
     url.searchParams.append('filter[status]', 'not_started')
 
     // Fetch upcoming CS:GO matches
@@ -87,6 +87,13 @@ Deno.serve(async (req) => {
 
     const matches: PandaScoreMatch[] = await response.json()
     console.log(`Found ${matches.length} upcoming matches`)
+
+    // Additional logging to debug match data
+    matches.forEach(match => {
+      console.log(`Match ID: ${match.id}, Name: ${match.name}, Teams: ${
+        match.opponents?.map(o => o.opponent?.name || 'unknown').join(' vs ') || 'No opponents'
+      }`)
+    })
 
     // Transform matches with better filtering
     const relevantMatches = matches
