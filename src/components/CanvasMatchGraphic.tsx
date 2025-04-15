@@ -33,7 +33,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       console.error('Failed to load background image');
     };
     
-    img.src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb';
+    img.src = 'https://images.unsplash.com/photo-1433086966358-54859d0ed716';
   }, []);
 
   // Pre-load all team logos
