@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
 import { loadImage } from '@/lib/utils/imageLoader';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CanvasMatchGraphicProps {
   matches: Match[];
