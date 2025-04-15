@@ -252,6 +252,9 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Define padding constant at the top level of the function
+    const padding = 16;
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
     
