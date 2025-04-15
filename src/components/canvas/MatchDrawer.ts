@@ -1,3 +1,4 @@
+
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -23,27 +24,29 @@ export const drawMatch = ({
   settings,
   logoCache
 }: DrawMatchOptions) => {
-  // Reduce row height from 160 to 120 for more compact layout
-  const rowHeight = 120;
+  // Adjust row height and add more vertical spacing between matches
+  const rowHeight = 90; // Reduced from 120 for better proportions
+  const verticalGap = 24; // Add space between match boxes
   const padding = 48;
-  const logoSize = 48; // Reduced from 80
+  const logoSize = 40; // Slightly smaller logos
+  const logoTextGap = 24; // Increased gap between logo and text
   
-  // Draw background
+  // Draw background with adjusted y position to account for gaps
   drawRoundedRect(
     ctx,
     padding,
-    y,
+    y + verticalGap/2, // Add half the gap at the top
     width - padding,
     rowHeight,
     16,
     isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)'
   );
   
-  const verticalCenter = y + (rowHeight / 2);
+  const verticalCenter = y + verticalGap/2 + (rowHeight / 2);
   
   // Draw time (left side)
   if (settings.showTime) {
-    ctx.font = 'bold 42px Inter'; // Slightly larger time font
+    ctx.font = 'bold 42px Inter';
     ctx.fillStyle = '#9CA3AF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
@@ -61,10 +64,9 @@ export const drawMatch = ({
     ctx.textBaseline = 'middle';
     ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
   } else {
-    const maxTeamNameWidth = 400; // Reduced for better spacing
-    const team1X = centerX - 80; // Adjusted position
-    const team2X = centerX + 80;
-    const logoGap = 16; // Gap between logo and team name
+    const maxTeamNameWidth = 360; // Slightly reduced to accommodate more spacing
+    const team1X = centerX - 100; // Adjusted positions for better spacing
+    const team2X = centerX + 100;
 
     // Team 1 (Right aligned, before vs)
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
@@ -73,14 +75,14 @@ export const drawMatch = ({
     ctx.textBaseline = 'middle';
     
     const team1Name = truncateText(ctx, match.team1.name, maxTeamNameWidth);
-    ctx.fillText(team1Name, team1X - (settings.showLogos ? logoSize + logoGap : 0), verticalCenter);
+    ctx.fillText(team1Name, team1X - (settings.showLogos ? logoSize + logoTextGap : 0), verticalCenter);
 
-    // Draw Team 1 logo
+    // Draw Team 1 logo with increased spacing
     if (settings.showLogos && match.team1.logo) {
       drawTeamLogo(
         ctx, 
         match.team1.logo, 
-        team1X - logoSize - 8,
+        team1X - logoSize - logoTextGap/2,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache
@@ -101,14 +103,14 @@ export const drawMatch = ({
     ctx.textBaseline = 'middle';
     
     const team2Name = truncateText(ctx, match.team2.name, maxTeamNameWidth);
-    ctx.fillText(team2Name, team2X + (settings.showLogos ? logoGap : 0), verticalCenter);
+    ctx.fillText(team2Name, team2X + (settings.showLogos ? logoTextGap : 0), verticalCenter);
 
-    // Draw Team 2 logo
+    // Draw Team 2 logo with increased spacing
     if (settings.showLogos && match.team2.logo) {
       drawTeamLogo(
         ctx, 
         match.team2.logo, 
-        team2X + ctx.measureText(team2Name).width + logoGap,
+        team2X + ctx.measureText(team2Name).width + logoTextGap,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache
@@ -131,6 +133,6 @@ export const drawMatch = ({
     ctx.font = 'italic 24px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('Anwesenheitspflicht', timeWidth + padding, y + rowHeight + 8);
+    ctx.fillText('Anwesenheitspflicht', timeWidth + padding, y + rowHeight + verticalGap/2 + 8);
   }
 };
