@@ -73,9 +73,6 @@ export const drawMatch = ({
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     
-    const team1Name = truncateText(ctx, match.team1.name, maxTeamNameWidth);
-    ctx.fillText(team1Name, team1X - (settings.showLogos ? logoSize + logoTextGap : 0), verticalCenter);
-
     // Draw Team 1 logo with increased spacing
     if (settings.showLogos && match.team1.logo) {
       drawTeamLogo(
@@ -87,6 +84,9 @@ export const drawMatch = ({
         logoCache
       );
     }
+
+    const team1Name = truncateText(ctx, match.team1.name, maxTeamNameWidth);
+    ctx.fillText(team1Name, team1X - (settings.showLogos ? logoSize + logoTextGap * 2 : 0), verticalCenter);
 
     // VS text (centered)
     ctx.fillStyle = '#6B7280';
