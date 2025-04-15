@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff } from 'lucide-react';
 import { loadImage } from '@/lib/utils/imageLoader';
+import { Button } from '@/components/ui/button';
 
 interface CanvasMatchGraphicProps {
   matches: Match[];
@@ -24,7 +25,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const [bgLoading, setBgLoading] = useState(true);
   const [bgError, setBgError] = useState(false);
 
-  // Load background image using the image loader utility
   useEffect(() => {
     const bgImageUrl = 'https://b3b5f642-e8a5-4f27-806f-b4259c301002.lovableproject.com/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
     setBgLoading(true);
@@ -33,7 +33,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     const img = new Image();
     img.crossOrigin = "anonymous";
     
-    // First try to load directly
     img.onload = () => {
       console.log('Background image loaded successfully');
       setBgImage(img);
@@ -43,13 +42,11 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     img.onerror = async () => {
       console.log('Direct loading failed, trying proxy loading for background');
       
-      // If direct loading fails, try using our image loader utility
       try {
         const success = await loadImage(bgImageUrl);
         
         if (success) {
           console.log('Background loaded via proxy successfully');
-          // Recreate the image after proxy success
           const proxyImg = new Image();
           proxyImg.crossOrigin = "anonymous";
           proxyImg.onload = () => {
@@ -78,7 +75,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     img.src = bgImageUrl;
   }, []);
 
-  // Pre-load all team logos
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
@@ -104,7 +100,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
         return;
       }
       
-      // Try to load through our image loader first
       try {
         const success = await loadImage(url);
         
@@ -168,7 +163,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       ctx.drawImage(logoImg, x, y, size, size);
       ctx.restore();
 
-      // Add a subtle border
       ctx.beginPath();
       ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(255,255,255,0.2)';
@@ -188,10 +182,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     const rowHeight = 60;
     const padding = 16;
     
-    // Background
     ctx.fillStyle = isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)';
     
-    // Add rounded corners
     const radius = 8;
     ctx.save();
     ctx.beginPath();
@@ -209,10 +201,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     ctx.fill();
     ctx.restore();
     
-    // Vertical center position for all content
     const verticalCenter = y + (rowHeight / 2);
     
-    // Time section
     if (settings.showTime) {
       ctx.font = 'bold 14px Inter';
       ctx.fillStyle = '#9CA3AF';
@@ -221,60 +211,47 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       ctx.fillText(match.time, padding + 12, verticalCenter);
     }
 
-    // Team names and logos
     const timeWidth = settings.showTime ? 70 : 0;
     const teamSection = width - timeWidth - (padding * 4);
     const centerX = padding + timeWidth + (teamSection / 2);
 
     if ('isCustomEntry' in match && match.isCustomEntry) {
-      // Custom entry - single title
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
       ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.team1.name, centerX - 140, verticalCenter);
     } else {
-      // Team 1 position
       const team1X = centerX - 110;
-      
-      // Team 2 position
       const team2X = centerX + 30;
-      
-      // VS position
       const vsX = centerX - 40;
-      
-      // Team 1 logo (left of team name)
+
       if (settings.showLogos) {
         drawLogo(ctx, match.team1.logo, team1X - 40, verticalCenter - 12);
       }
       
-      // Team 1 name
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
       ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.team1.name, team1X, verticalCenter);
 
-      // VS
       ctx.fillStyle = '#6B7280';
       ctx.font = '12px Inter';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('vs', vsX, verticalCenter);
 
-      // Team 2 logo (left of team name)
       if (settings.showLogos) {
         drawLogo(ctx, match.team2.logo, team2X - 40, verticalCenter - 12);
       }
       
-      // Team 2 name
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
       ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.team2.name, team2X, verticalCenter);
 
-      // Tournament name if available
       if (match.tournament) {
         ctx.fillStyle = '#6B7280';
         ctx.font = '12px Inter';
@@ -285,7 +262,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       }
     }
 
-    // Add BIG match indicator
     if (isBIG && !('isCustomEntry' in match)) {
       ctx.fillStyle = '#10A37F';
       ctx.font = 'italic 12px Inter';
@@ -304,56 +280,46 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
 
     const padding = 16;
 
-    // Calculate required height based on matches
     const totalHeight = matches.reduce((acc, match) => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
       return acc + (isBIG ? 80 : 70);
     }, 80);
 
-    // Update canvas dimensions
     canvas.height = totalHeight + padding;
     canvas.width = width;
 
-    // Clear canvas
     ctx.clearRect(0, 0, width, canvas.height);
     
-    // Draw background image if loaded
     if (bgImage) {
       console.log('Drawing background image');
       ctx.save();
       
-      // Create gradient overlay
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
       
-      // Draw background image with cover effect
       const scale = Math.max(canvas.width / bgImage.width, canvas.height / bgImage.height);
       const x = (canvas.width - bgImage.width * scale) * 0.5;
       const y = (canvas.height - bgImage.height * scale) * 0.5;
       
       ctx.drawImage(bgImage, x, y, bgImage.width * scale, bgImage.height * scale);
       
-      // Apply gradient overlay
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       ctx.restore();
     } else {
-      // Fallback solid background
       console.log('Using fallback background');
       ctx.fillStyle = settings.backgroundColor;
       ctx.fillRect(0, 0, width, canvas.height);
     }
 
-    // Draw title
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 28px Inter';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText('Watchparty Schedule', width - padding - 12, 40);
 
-    // Draw matches
     let currentY = 80;
     matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
@@ -362,7 +328,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     });
   };
 
-  // Draw when component mounts and when images are loaded
   useEffect(() => {
     if (imagesLoaded) {
       console.log('Images loaded, drawing graphic');
@@ -370,7 +335,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage]);
 
-  // Create a fallback display when the canvas is empty or loading
   const renderFallback = () => {
     if (bgLoading) {
       return (
