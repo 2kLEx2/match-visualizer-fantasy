@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { downloadGraphic } from '@/utils/graphicDownloader';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/lib/supabase/client';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -32,6 +34,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -137,6 +140,15 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   };
 
   const prepareTwitterShare = async () => {
+    if (selectedMatches.length === 0 && customEntries.length === 0) {
+      toast({
+        title: "No content to display",
+        description: "Please select matches or add custom entries to generate a graphic.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!graphicRef.current) {
       toast({
         title: "Error",
@@ -146,34 +158,47 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       return;
     }
 
-    setIsDownloading(true);
+    setIsSharing(true);
 
     try {
+      // Get the canvas element
       const canvas = graphicRef.current.querySelector('canvas');
       if (!canvas) {
         throw new Error('Canvas element not found');
       }
 
+      // Convert canvas to data URL
       const dataUrl = canvas.toDataURL('image/png');
       
-      const tweetText = encodeURIComponent(`Check out our upcoming matches! ${customTitle}`);
-      const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+      // Prepare tweet text
+      const tweetText = `Check out our upcoming matches! ${customTitle}`;
       
-      window.open(shareUrl, '_blank', 'width=600,height=400');
+      // Call the Supabase Edge Function to share on Twitter
+      const { data, error } = await supabase.functions.invoke('share-twitter', {
+        body: {
+          text: tweetText,
+          imageData: dataUrl
+        }
+      });
+
+      if (error) {
+        console.error('Twitter share error:', error);
+        throw new Error(error.message || 'Failed to share on Twitter');
+      }
 
       toast({
         title: "Success",
-        description: "Twitter share window opened successfully.",
+        description: "Your graphic has been shared on Twitter!",
       });
     } catch (error) {
       console.error('Twitter share error:', error);
       toast({
         title: "Error",
-        description: "Failed to prepare Twitter share. Please try again.",
+        description: "Failed to share on Twitter. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsDownloading(false);
+      setIsSharing(false);
     }
   };
 
@@ -225,7 +250,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           <div className="flex gap-4">
             <Button
               onClick={handleDownload}
-              disabled={isDownloading}
+              disabled={isDownloading || isSharing}
               className="flex-1 bg-primary hover:bg-primary/90 text-white"
             >
               <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
@@ -234,11 +259,11 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
             <Button
               onClick={prepareTwitterShare}
-              disabled={isDownloading}
+              disabled={isDownloading || isSharing}
               className="flex-1 bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white"
             >
-              <Twitter className="w-4 h-4 mr-2" />
-              Share on Twitter
+              <Twitter className={`w-4 h-4 mr-2 ${isSharing ? 'animate-spin' : ''}`} />
+              {isSharing ? 'Sharing...' : 'Share on Twitter'}
             </Button>
           </div>
         </div>
