@@ -200,4 +200,4 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       )}
     </div>
   );
-});
+};
