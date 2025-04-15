@@ -1,6 +1,7 @@
 
-import React, { useEffect, useState } from 'react';
-import { Shield, ImageOff } from 'lucide-react';
+import React from 'react';
+import { Shield } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface TeamLogoProps {
   logo?: string;
@@ -16,33 +17,29 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-[24px] h-[24px] flex items-center justify-center">
-        <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
-      </div>
+      <Avatar className="w-[24px] h-[24px]">
+        <AvatarFallback>
+          <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
+        </AvatarFallback>
+      </Avatar>
     );
   }
 
-  // Error state or no logo provided
-  if (!safeLogo || !isLoaded) {
-    return (
-      <div className="w-[24px] h-[24px] flex items-center justify-center">
-        <Shield className="w-5 h-5 text-gray-400" />
-      </div>
-    );
-  }
-
-  // Successfully loaded logo
   return (
-    <img 
-      src={safeLogo}
-      alt={`${teamName} logo`}
-      className="w-[24px] h-[24px] object-contain"
-      crossOrigin="anonymous"
-      loading="lazy"
-      onError={(e) => {
-        e.currentTarget.src = "/placeholder.svg"; // Fallback image if logo fails to load
-        console.error(`Failed to load team logo: ${safeLogo}`);
-      }}
-    />
+    <Avatar className="w-[24px] h-[24px]">
+      <AvatarImage
+        src={safeLogo || 'https://picsum.photos/24/24'}
+        alt={`${teamName} logo`}
+        className="object-contain"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = 'https://picsum.photos/24/24';
+          console.error(`Failed to load team logo: ${safeLogo}`);
+        }}
+      />
+      <AvatarFallback>
+        <Shield className="w-5 h-5 text-gray-400" />
+      </AvatarFallback>
+    </Avatar>
   );
 };
