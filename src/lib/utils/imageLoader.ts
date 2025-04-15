@@ -1,10 +1,14 @@
-
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
   loaded: boolean;
   loading: boolean;
 };
+
+// Create a global cache for data URLs to be accessed across components
+if (!window.dataUrlCache) {
+  window.dataUrlCache = new Map<string, string>();
+}
 
 /**
  * Converts an image URL to a thumbnail version for better performance.
@@ -29,7 +33,6 @@ const convertToThumbnail = (url: string): string => {
 // Global caches for image loading status
 const loadingCache = new Map<string, Promise<boolean>>();
 const loadedImages = new Map<string, boolean>();
-const dataUrlCache = new Map<string, string>();
 
 /**
  * Loads an image via the Supabase proxy to handle CORS issues.
@@ -59,30 +62,8 @@ export const loadImage = async (url: string): Promise<boolean> => {
     // Create a promise for this loading operation
     const loadPromise = new Promise<boolean>(async (resolve) => {
       try {
-        // Always use proxy for external CDN images since we know they'll have CORS issues
-        const isExternalCDN = url.includes('pandascore.co') || 
-                              url.includes('cdn.') || 
-                              url.includes('cloudfront.net');
-        
-        // Skip direct loading and go straight to proxy for CDN images
-        if (isExternalCDN) {
-          console.log('Using proxy for CDN image:', thumbnailUrl);
-          await loadViaProxy(thumbnailUrl, resolve);
-          return;
-        }
-        
-        // Try loading directly first for same-origin images
-        const directLoadResult = await loadDirectly(thumbnailUrl);
-        
-        if (directLoadResult) {
-          console.log('Successfully loaded image directly:', thumbnailUrl);
-          loadedImages.set(url, true);
-          resolve(true);
-          return;
-        }
-        
-        // Direct loading failed, try proxy loading
-        console.log('Direct image loading failed, trying proxy:', thumbnailUrl);
+        // Skip direct loading and always use proxy for CDN images
+        console.log('Using proxy for CDN image:', thumbnailUrl);
         await loadViaProxy(thumbnailUrl, resolve);
       } catch (error) {
         console.error('Image loading error:', error);
@@ -108,40 +89,13 @@ export const loadImage = async (url: string): Promise<boolean> => {
 };
 
 /**
- * Helper function to load an image directly from URL
- */
-const loadDirectly = (url: string): Promise<boolean> => {
-  return new Promise<boolean>((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    
-    const timeoutId = setTimeout(() => {
-      console.log('Direct image loading timed out:', url);
-      resolve(false);
-    }, 3000);
-    
-    img.onload = () => {
-      clearTimeout(timeoutId);
-      resolve(true);
-    };
-    
-    img.onerror = () => {
-      clearTimeout(timeoutId);
-      resolve(false);
-    };
-    
-    img.src = url;
-  });
-};
-
-/**
  * Helper function to load an image via the proxy
  */
 const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
   try {
-    // Check if we already have a proxied data URL for this image
-    if (dataUrlCache.has(url)) {
-      const cachedDataUrl = dataUrlCache.get(url);
+    // Check if we already have a proxied data URL for this image in the global cache
+    if (window.dataUrlCache.has(url)) {
+      const cachedDataUrl = window.dataUrlCache.get(url);
       if (cachedDataUrl) {
         console.log('Using cached data URL for:', url);
         const proxyImg = new Image();
@@ -180,8 +134,8 @@ const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
       return;
     }
 
-    // Cache the data URL for future use
-    dataUrlCache.set(url, data.imageData);
+    // Store in the global cache
+    window.dataUrlCache.set(url, data.imageData);
     console.log('Successfully received data URL from proxy for:', url);
 
     // Create an image element and load the data URL
@@ -269,3 +223,10 @@ export const useImageLoader = () => {
 
   return { loadImages };
 };
+
+// Add global type definition for the dataUrlCache
+declare global {
+  interface Window {
+    dataUrlCache: Map<string, string>;
+  }
+}
