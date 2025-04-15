@@ -30,7 +30,7 @@ export const useCanvasImages = (matches: Match[]) => {
     };
   }, [retryCount]);
 
-  // Load team logos - only use dataUrlCache to avoid CORS issues
+  // Load team logos
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
@@ -42,6 +42,7 @@ export const useCanvasImages = (matches: Match[]) => {
       return;
     }
     
+    console.log('Starting to load team logos:', teamLogos);
     const logoElements: Record<string, HTMLImageElement> = {};
     let loadedCount = 0;
     const totalLogos = teamLogos.length;
@@ -60,7 +61,7 @@ export const useCanvasImages = (matches: Match[]) => {
         const success = await loadImage(url);
         
         if (success) {
-          // Create a new image element
+          // Create a new image element for the cached data URL
           const img = new Image();
           img.crossOrigin = "anonymous";
           
@@ -72,12 +73,12 @@ export const useCanvasImages = (matches: Match[]) => {
           };
           
           img.onerror = () => {
-            console.log(`Failed to load logo: ${url}`);
+            console.error(`Failed to load logo: ${url}`);
             loadedCount++;
             checkIfComplete();
           };
           
-          // IMPORTANT: Get the data URL from the cache - this avoids CORS issues
+          // Get the cached data URL from the global cache
           const cachedDataUrl = window.dataUrlCache?.get(url);
           if (cachedDataUrl) {
             console.log(`Using cached data URL for logo: ${url}`);
@@ -88,7 +89,7 @@ export const useCanvasImages = (matches: Match[]) => {
             checkIfComplete();
           }
         } else {
-          console.log(`Failed to load logo via proxy: ${url}`);
+          console.error(`Failed to load logo via proxy: ${url}`);
           loadedCount++;
           checkIfComplete();
         }
@@ -100,8 +101,9 @@ export const useCanvasImages = (matches: Match[]) => {
     });
     
     function checkIfComplete() {
+      console.log(`Loaded ${loadedCount}/${totalLogos} logos`);
       if (loadedCount === totalLogos) {
-        console.log('All logos processed');
+        console.log('All logos processed:', logoElements);
         setLogoCache(logoElements);
         setImagesLoaded(true);
       }

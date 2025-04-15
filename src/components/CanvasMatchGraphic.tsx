@@ -78,6 +78,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     ctx.textBaseline = 'middle';
     ctx.fillText('Watchparty Schedule', width - padding - 32, 80);
 
+    console.log('Drawing matches with logoCache:', Object.keys(logoCache));
+    
     let currentY = 160;
     matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
@@ -96,7 +98,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
 
   useEffect(() => {
     if (imagesLoaded && !bgLoading) {
-      console.log('Images loaded, drawing graphic');
+      console.log('Images loaded, drawing graphic with logoCache:', Object.keys(logoCache));
       drawGraphic();
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage, bgLoading]);

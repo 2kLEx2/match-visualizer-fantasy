@@ -33,9 +33,13 @@ export const drawTeamLogo = (
   size: number = 80,
   logoCache: Record<string, HTMLImageElement>
 ) => {
-  if (!url || !logoCache[url]) return;
+  if (!url || !logoCache[url]) {
+    console.log(`Cannot draw logo - missing url or not in cache: ${url}`);
+    return;
+  }
   
   try {
+    console.log(`Drawing logo ${url} at position (${x}, ${y})`);
     ctx.save();
     ctx.drawImage(logoCache[url], x, y, size, size);
     ctx.restore();

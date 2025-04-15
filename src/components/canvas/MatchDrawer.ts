@@ -63,9 +63,12 @@ export const drawMatch = ({
     const team2X = centerX + 100;
 
     if (settings.showLogos) {
-      // Draw team1 logo if it exists in the cache
+      // Draw team1 logo if available
       if (match.team1.logo && logoCache[match.team1.logo]) {
+        console.log(`Drawing Team 1 logo: ${match.team1.logo}`);
         drawTeamLogo(ctx, match.team1.logo, team1X - 280, verticalCenter - 40, 80, logoCache);
+      } else {
+        console.log(`Team 1 logo not available: ${match.team1.logo}`);
       }
     }
     
@@ -86,9 +89,12 @@ export const drawMatch = ({
     ctx.fillText('vs', vsX, verticalCenter);
 
     if (settings.showLogos) {
-      // Draw team2 logo if it exists in the cache
+      // Draw team2 logo if available
       if (match.team2.logo && logoCache[match.team2.logo]) {
+        console.log(`Drawing Team 2 logo: ${match.team2.logo}`);
         drawTeamLogo(ctx, match.team2.logo, team2X + 20, verticalCenter - 40, 80, logoCache);
+      } else {
+        console.log(`Team 2 logo not available: ${match.team2.logo}`);
       }
     }
     
