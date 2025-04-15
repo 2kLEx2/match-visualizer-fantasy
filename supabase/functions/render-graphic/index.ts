@@ -43,7 +43,8 @@ serve(async (req) => {
     // Remove the data:image/png;base64, prefix if present
     const base64Data = imageData.replace(/^data:image\/png;base64,/, '');
 
-    // Return the processed image
+    // In a full implementation, we would process the image here
+    // For now, we're just returning the image as-is
     return new Response(
       JSON.stringify({ 
         image: base64Data,

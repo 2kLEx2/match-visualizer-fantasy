@@ -30,6 +30,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   });
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [graphicScale, setGraphicScale] = useState(100);
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -53,6 +54,12 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     setIsDownloading(true);
 
     try {
+      // Set scale to 100% for rendering
+      setGraphicScale(100);
+      
+      // Wait for the scale change to be applied
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Convert custom entries to match format
       const customMatches: Match[] = customEntries.map(entry => ({
         id: entry.id,
@@ -184,13 +191,13 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             settings={{
               showLogos: true,
               showTime: true,
-              backgroundColor: '#FFFFFF',
-              textColor: '#000000',
-              scale: 100,
+              backgroundColor: '#1a1b1e',
+              textColor: '#FFFFFF',
+              scale: graphicScale,
             }}
           />
         </div>
       )}
     </div>
   );
-};
+});

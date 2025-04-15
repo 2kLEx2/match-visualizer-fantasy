@@ -4,7 +4,11 @@ import { supabase } from '@/lib/supabase/client';
 import html2canvas from 'html2canvas';
 
 const preloadImages = async (matches: Match[]): Promise<void> => {
-  const imageUrls = matches.flatMap(match => [match.team1.logo, match.team2.logo]).filter(Boolean);
+  const imageUrls = matches
+    .flatMap(match => [match.team1.logo, match.team2.logo])
+    .filter(Boolean)
+    .map(url => url?.trim())
+    .filter(url => url !== '');
   
   await Promise.all(
     imageUrls.map(url => {
@@ -31,13 +35,13 @@ export const downloadGraphic = async (
     await preloadImages(matches);
 
     // Add a small delay to ensure images are rendered
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Capture the HTML element as a canvas
     const canvas = await html2canvas(graphicRef, {
       backgroundColor: null,
       scale: 2, // Higher quality
-      logging: true,
+      logging: false,
       width: 600, // Fixed width
       height: graphicRef.offsetHeight, // Dynamic height based on content
       windowWidth: 600, // Ensure consistent rendering
@@ -49,6 +53,12 @@ export const downloadGraphic = async (
         for (let img of images) {
           img.crossOrigin = "anonymous";
         }
+        
+        // Ensure all styles are properly applied in the clone
+        const graphics = clonedDoc.querySelectorAll('[data-graphic="true"]');
+        graphics.forEach(graphic => {
+          graphic.setAttribute('style', 'width: 600px; transform: scale(1); transform-origin: top left;');
+        });
       }
     });
 

@@ -12,6 +12,7 @@ interface TeamLogoProps {
 
 export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoProps) => {
   const [hasError, setHasError] = useState(false);
+  const fallbackImage = 'https://picsum.photos/64/64';
   
   // Reset error state if logo changes
   useEffect(() => {
@@ -36,6 +37,11 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
   if (!safeLogo || hasError) {
     return (
       <Avatar className="w-[24px] h-[24px]">
+        <AvatarImage
+          src={fallbackImage}
+          alt={`${teamName} logo fallback`}
+          className="object-contain"
+        />
         <AvatarFallback>
           <Shield className="w-5 h-5 text-gray-400" />
         </AvatarFallback>
@@ -56,10 +62,15 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
           }}
         />
       ) : (
-        <AvatarFallback>
-          <Shield className="w-5 h-5 text-gray-400" />
-        </AvatarFallback>
+        <AvatarImage
+          src={fallbackImage}
+          alt={`${teamName} logo fallback`}
+          className="object-contain"
+        />
       )}
+      <AvatarFallback>
+        <Shield className="w-5 h-5 text-gray-400" />
+      </AvatarFallback>
     </Avatar>
   );
 });
