@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Match } from '@/lib/api/matches';
 import { TeamLogo } from './TeamLogo';
 
@@ -12,7 +12,7 @@ interface MatchRowProps {
   loadingStates: Record<string, boolean>;
 }
 
-export const MatchRow = ({ 
+export const MatchRow = memo(({ 
   match, 
   isBIG, 
   showTime, 
@@ -92,4 +92,6 @@ export const MatchRow = ({
       )}
     </div>
   );
-};
+});
+
+MatchRow.displayName = 'MatchRow';

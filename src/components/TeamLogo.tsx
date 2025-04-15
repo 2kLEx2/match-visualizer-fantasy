@@ -27,19 +27,22 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
 
   return (
     <Avatar className="w-[24px] h-[24px]">
-      <AvatarImage
-        src={safeLogo || 'https://picsum.photos/24/24'}
-        alt={`${teamName} logo`}
-        className="object-contain"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.src = 'https://picsum.photos/24/24';
-          console.error(`Failed to load team logo: ${safeLogo}`);
-        }}
-      />
-      <AvatarFallback>
-        <Shield className="w-5 h-5 text-gray-400" />
-      </AvatarFallback>
+      {safeLogo && isLoaded ? (
+        <AvatarImage
+          src={safeLogo}
+          alt={`${teamName} logo`}
+          className="object-contain"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://picsum.photos/24/24';
+            console.error(`Failed to load team logo: ${safeLogo}`);
+          }}
+        />
+      ) : (
+        <AvatarFallback>
+          <Shield className="w-5 h-5 text-gray-400" />
+        </AvatarFallback>
+      )}
     </Avatar>
   );
 };
