@@ -122,6 +122,7 @@ const team1NameX = team1LogoX - logoTextGap;
   ctx.fillText(team2Name, team2NameX, verticalCenter);
 
   // --- Tournament Name
+  const maxTextWidth = 300;
   if (match.tournament) {
     ctx.font = '16px Inter';
     ctx.fillStyle = '#6B7280';
