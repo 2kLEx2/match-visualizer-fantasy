@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 
@@ -19,13 +18,30 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [logoCache, setLogoCache] = useState<Record<string, HTMLImageElement>>({});
+  const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
 
-  // Pre-load all team logos to ensure they're available when drawing
+  // Load background image
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    img.onload = () => {
+      setBgImage(img);
+    };
+    
+    img.onerror = () => {
+      console.error('Failed to load background image');
+    };
+    
+    img.src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb';
+  }, []);
+
+  // Pre-load all team logos
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
       .filter(Boolean)
-      .filter((url, index, self) => url && self.indexOf(url) === index); // Get unique logo URLs
+      .filter((url, index, self) => url && self.indexOf(url) === index);
     
     if (teamLogos.length === 0) {
       setImagesLoaded(true);
@@ -60,30 +76,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
         }
       };
       
-      // Default placeholder for fallback
-      const placeholderUrl = 'https://picsum.photos/64/64';
-      
-      // Try loading the actual logo
       img.src = url;
-      
-      // Set a timeout to use the placeholder if actual logo doesn't load in time
-      setTimeout(() => {
-        if (!img.complete || img.naturalHeight === 0) {
-          console.log(`Logo timed out, using placeholder: ${url}`);
-          img.src = placeholderUrl;
-        }
-      }, 3000);
     });
-    
-    return () => {
-      // Clean up by removing event listeners when component unmounts
-      teamLogos.forEach(url => {
-        if (logoElements[url]) {
-          logoElements[url].onload = null;
-          logoElements[url].onerror = null;
-        }
-      });
-    };
   }, [matches]);
 
   const drawLogo = (
@@ -97,7 +91,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     
     const logoImg = logoCache[url];
     if (!logoImg) {
-      // Draw a placeholder if the logo didn't load
       ctx.fillStyle = '#4A5568';
       ctx.beginPath();
       ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
@@ -105,25 +98,20 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       return;
     }
     
-    // Draw the team logo
     try {
       ctx.save();
-      // Create circular clipping path
       ctx.beginPath();
       ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
       ctx.clip();
-      
-      // Draw the image centered in the circle
       ctx.drawImage(logoImg, x, y, size, size);
-      
+      ctx.restore();
+
       // Add a subtle border
       ctx.beginPath();
       ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(255,255,255,0.2)';
       ctx.lineWidth = 1;
       ctx.stroke();
-      
-      ctx.restore();
     } catch (e) {
       console.error('Error drawing logo:', e);
     }
@@ -252,32 +240,46 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Define padding constant at the top level of the function
     const padding = 16;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Draw background with image
-    ctx.fillStyle = settings.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-    
-    // Add background image
-    const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-    bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
-    bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, width, height);
 
     // Calculate required height based on matches
     const totalHeight = matches.reduce((acc, match) => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
-      return acc + (isBIG ? 80 : 70); // Height for each match row
-    }, 80); // Initial offset for title
+      return acc + (isBIG ? 80 : 70);
+    }, 80);
 
-    // Resize canvas if needed
-    if (canvas.height < totalHeight) {
-      canvas.height = totalHeight + 20; // Add some padding
+    // Update canvas dimensions
+    canvas.height = totalHeight + padding;
+    canvas.width = width;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, canvas.height);
+    
+    // Draw background image if loaded
+    if (bgImage) {
+      ctx.save();
+      
+      // Create gradient overlay
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+      
+      // Draw background image with cover effect
+      const scale = Math.max(canvas.width / bgImage.width, canvas.height / bgImage.height);
+      const x = (canvas.width - bgImage.width * scale) * 0.5;
+      const y = (canvas.height - bgImage.height * scale) * 0.5;
+      
+      ctx.drawImage(bgImage, x, y, bgImage.width * scale, bgImage.height * scale);
+      
+      // Apply gradient overlay
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.restore();
+    } else {
+      // Fallback solid background
+      ctx.fillStyle = settings.backgroundColor;
+      ctx.fillRect(0, 0, width, canvas.height);
     }
 
     // Draw title
@@ -289,19 +291,19 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
 
     // Draw matches
     let currentY = 80;
-    for (const match of matches) {
+    matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
       drawMatch(ctx, match, currentY, isBIG);
-      currentY += isBIG ? 90 : 70; // Extra space for BIG matches
-    }
+      currentY += isBIG ? 90 : 70;
+    });
   };
 
   // Draw when component mounts and when images are loaded
   useEffect(() => {
-    if (imagesLoaded) {
+    if (imagesLoaded && (bgImage || !matches.length)) {
       drawGraphic();
     }
-  }, [matches, settings, imagesLoaded, logoCache]);
+  }, [matches, settings, imagesLoaded, logoCache, bgImage]);
 
   return (
     <canvas 
