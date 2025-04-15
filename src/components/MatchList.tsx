@@ -1,5 +1,5 @@
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -60,15 +60,17 @@ const MatchListItem = memo(({ match, isSelected, onSelect }: {
 
 MatchListItem.displayName = 'MatchListItem';
 
-export const MatchList = ({ matches, selectedMatches, onMatchSelect }: MatchListProps) => {
-  // Group matches by tournament
-  const matchesByTournament = matches.reduce((acc, match) => {
-    if (!acc[match.tournament]) {
-      acc[match.tournament] = [];
-    }
-    acc[match.tournament].push(match);
-    return acc;
-  }, {} as Record<string, Match[]>);
+export const MatchList = memo(({ matches, selectedMatches, onMatchSelect }: MatchListProps) => {
+  // Group matches by tournament using memoization to prevent recalculation
+  const matchesByTournament = useMemo(() => {
+    return matches.reduce((acc, match) => {
+      if (!acc[match.tournament]) {
+        acc[match.tournament] = [];
+      }
+      acc[match.tournament].push(match);
+      return acc;
+    }, {} as Record<string, Match[]>);
+  }, [matches]);
 
   // Track expanded state for each tournament - initialize all to false (collapsed)
   const [expandedTournaments, setExpandedTournaments] = useState<Record<string, boolean>>(() => {
@@ -128,4 +130,6 @@ export const MatchList = ({ matches, selectedMatches, onMatchSelect }: MatchList
       ))}
     </div>
   );
-};
+});
+
+MatchList.displayName = 'MatchList';

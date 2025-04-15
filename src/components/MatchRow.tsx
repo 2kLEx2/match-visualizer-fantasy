@@ -48,8 +48,8 @@ export const MatchRow = memo(({
                     <TeamLogo 
                       logo={match.team1.logo}
                       teamName={match.team1.name}
-                      isLoading={loadingStates[match.team1.logo || '']}
-                      isLoaded={loadedImages[match.team1.logo || '']}
+                      isLoading={Boolean(loadingStates[match.team1.logo || ''])}
+                      isLoaded={Boolean(loadedImages[match.team1.logo || ''])}
                     />
                   )}
                   <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>
@@ -66,8 +66,8 @@ export const MatchRow = memo(({
                     <TeamLogo 
                       logo={match.team2.logo}
                       teamName={match.team2.name}
-                      isLoading={loadingStates[match.team2.logo || '']}
-                      isLoaded={loadedImages[match.team2.logo || '']}
+                      isLoading={Boolean(loadingStates[match.team2.logo || ''])}
+                      isLoaded={Boolean(loadedImages[match.team2.logo || ''])}
                     />
                   )}
                   <span className={`text-base font-medium ${isBIG ? 'text-primary' : 'text-white'}`}>

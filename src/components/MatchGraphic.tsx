@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, memo } from 'react';
 import { Match } from '@/lib/api/matches';
 import { useToast } from '@/components/ui/use-toast';
 import { useImageLoader } from '@/lib/utils/imageLoader';
@@ -16,18 +16,37 @@ interface MatchGraphicProps {
   };
 }
 
-export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
+export const MatchGraphic = memo(({ matches, settings }: MatchGraphicProps) => {
   const scaleFactor = settings.scale / 100;
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const { loadImages } = useImageLoader();
+  const previousMatches = useRef<string>('');
 
   useEffect(() => {
-    const allLogos = matches.flatMap(match => [match.team1.logo, match.team2.logo])
-      .filter((logo): logo is string => !!logo);
+    // Only run when matches actually change to prevent infinite loops
+    const matchIds = matches.map(m => m.id).join(',');
+    if (previousMatches.current === matchIds) {
+      return;
+    }
+    previousMatches.current = matchIds;
+
+    // Get all unique logos that need to be loaded
+    const allLogos = Array.from(new Set(
+      matches.flatMap(match => [match.team1.logo, match.team2.logo])
+        .filter((logo): logo is string => !!logo && typeof logo === 'string' && logo.trim() !== '')
+    ));
 
     if (allLogos.length > 0) {
+      // Set immediate loading states for all logos
+      const initialLoadingStates = allLogos.reduce((acc, logo) => {
+        acc[logo] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      
+      setLoadingStates(initialLoadingStates);
+      
       loadImages(
         allLogos,
         (url, state) => {
@@ -35,11 +54,8 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
           setLoadingStates(prev => ({ ...prev, [url]: state.loading }));
         },
         (message) => {
-          toast({
-            title: "Warning",
-            description: message,
-            variant: "default",
-          });
+          // Only show one toast per batch to avoid spamming
+          console.warn(message);
         }
       );
     }
@@ -84,7 +100,7 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
               match={match}
               isBIG={isBIGMatch(match)}
               showTime={settings.showTime}
-              showLogos={true} // Force showLogos to true
+              showLogos={settings.showLogos}
               loadedImages={loadedImages}
               loadingStates={loadingStates}
             />
@@ -93,4 +109,6 @@ export const MatchGraphic = ({ matches, settings }: MatchGraphicProps) => {
       </div>
     </div>
   );
-};
+});
+
+MatchGraphic.displayName = 'MatchGraphic';

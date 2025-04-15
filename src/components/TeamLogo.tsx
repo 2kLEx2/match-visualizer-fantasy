@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Shield } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -10,7 +10,14 @@ interface TeamLogoProps {
   isLoaded: boolean;
 }
 
-export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps) => {
+export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoProps) => {
+  const [hasError, setHasError] = useState(false);
+  
+  // Reset error state if logo changes
+  useEffect(() => {
+    setHasError(false);
+  }, [logo]);
+
   // Ensure `logo` is a valid string
   const safeLogo = typeof logo === "string" && logo.trim() !== "" ? logo : null;
   
@@ -25,17 +32,27 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
     );
   }
 
+  // Handle case where we have no logo or logo already failed to load
+  if (!safeLogo || hasError) {
+    return (
+      <Avatar className="w-[24px] h-[24px]">
+        <AvatarFallback>
+          <Shield className="w-5 h-5 text-gray-400" />
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+
   return (
     <Avatar className="w-[24px] h-[24px]">
-      {safeLogo && isLoaded ? (
+      {isLoaded ? (
         <AvatarImage
           src={safeLogo}
           alt={`${teamName} logo`}
           className="object-contain"
           onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://picsum.photos/24/24';
-            console.error(`Failed to load team logo: ${safeLogo}`);
+            console.log(`Failed to load team logo: ${safeLogo}`);
+            setHasError(true);
           }}
         />
       ) : (
@@ -45,4 +62,6 @@ export const TeamLogo = ({ logo, teamName, isLoading, isLoaded }: TeamLogoProps)
       )}
     </Avatar>
   );
-};
+});
+
+TeamLogo.displayName = 'TeamLogo';
