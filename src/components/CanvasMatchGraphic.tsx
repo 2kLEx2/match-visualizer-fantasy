@@ -18,7 +18,6 @@ interface CanvasMatchGraphicProps {
 }
 
 const FALLBACK_BG = 'linear-gradient(to right bottom, #1e293b, #0f172a)';
-const DEFAULT_BG_URL = 'https://images.unsplash.com/photo-1613841683751-87a67163b44c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80';
 
 export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 400 }: CanvasMatchGraphicProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,8 +86,32 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
             loadedCount++;
             checkIfComplete();
           };
+
+          const dataUrlCache = new Map<string, string>();
+          const cachedUrl = dataUrlCache.get(url);
           
-          img.src = url;
+          if (cachedUrl) {
+            img.src = cachedUrl;
+          } else {
+            if (url.includes('pandascore.co') || url.includes('cdn.')) {
+              try {
+                const { data } = await supabase.functions.invoke('proxy-image', {
+                  body: { url }
+                });
+                
+                if (data?.success && data?.imageData) {
+                  dataUrlCache.set(url, data.imageData);
+                  img.src = data.imageData;
+                } else {
+                  img.src = url;
+                }
+              } catch (e) {
+                img.src = url;
+              }
+            } else {
+              img.src = url;
+            }
+          }
         } else {
           console.log(`Failed to load logo via proxy: ${url}`);
           loadedCount++;
@@ -305,12 +328,14 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   };
 
   useEffect(() => {
-    if (imagesLoaded) {
+    if (imagesLoaded && !bgLoading) {
+      console.log('Images loaded, drawing graphic');
       drawGraphic();
     }
-  }, [matches, settings, imagesLoaded, logoCache, bgImage]);
+  }, [matches, settings, imagesLoaded, logoCache, bgImage, bgLoading]);
 
   const handleRetryLoading = () => {
+    console.log('Retrying image loading');
     setBgLoading(true);
     setBgError(false);
     setImagesLoaded(false);

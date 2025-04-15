@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
@@ -58,13 +59,14 @@ export const loadImage = async (url: string): Promise<boolean> => {
     // Create a promise for this loading operation
     const loadPromise = new Promise<boolean>(async (resolve) => {
       try {
-        // For CDN images, go straight to proxy
-        // Skip direct loading attempt for external CDN images since we know they'll have CORS issues
+        // Always use proxy for external CDN images since we know they'll have CORS issues
         const isExternalCDN = url.includes('pandascore.co') || 
                               url.includes('cdn.') || 
                               url.includes('cloudfront.net');
         
+        // Skip direct loading and go straight to proxy for CDN images
         if (isExternalCDN) {
+          console.log('Using proxy for CDN image:', thumbnailUrl);
           await loadViaProxy(thumbnailUrl, resolve);
           return;
         }
