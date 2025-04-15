@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download } from 'lucide-react';
+import { Download, Copy, CopyCheck } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
@@ -30,8 +30,48 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   });
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
+
+  const copyToClipboard = async () => {
+    if (!graphicRef.current) {
+      toast({
+        title: "Error",
+        description: "Could not find the graphic element to copy.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCopying(true);
+    try {
+      const canvas = graphicRef.current.querySelector('canvas');
+      if (!canvas) throw new Error('Canvas not found');
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob
+        })
+      ]);
+
+      setIsCopying(false);
+      toast({
+        title: "Success",
+        description: "Graphic copied to clipboard!",
+      });
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy the graphic. Please try again.",
+        variant: "destructive",
+      });
+      setIsCopying(false);
+    }
+  };
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -200,14 +240,30 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             />
           </div>
 
-          <Button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="w-full bg-primary hover:bg-primary/90 text-white"
-          >
-            <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
-            {isDownloading ? 'Downloading...' : 'Download Graphic'}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white"
+            >
+              <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
+              {isDownloading ? 'Downloading...' : 'Download Graphic'}
+            </Button>
+            
+            <Button
+              onClick={copyToClipboard}
+              disabled={isCopying}
+              variant="secondary"
+              className="flex-1"
+            >
+              {isCopying ? (
+                <CopyCheck className="w-4 h-4 mr-2" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2" />
+              )}
+              {isCopying ? 'Copying...' : 'Copy Graphic'}
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -228,6 +284,8 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
               scale: graphicScale,
               title: customTitle,
             }}
+            width={1200}
+            height={675}
           />
         </div>
       )}

@@ -27,7 +27,7 @@ interface CanvasMatchGraphicProps {
 
 const FALLBACK_BG = 'linear-gradient(to right bottom, #1e293b, #0f172a)';
 
-export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1080 }: CanvasMatchGraphicProps) => {
+export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 675 }: CanvasMatchGraphicProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const {
     imagesLoaded,
@@ -45,15 +45,15 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const padding = 32;
+    const padding = 24;
 
     // Calculate total height based on matches
     const totalHeight = matches.reduce((acc, match) => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
-      return acc + (isBIG ? 140 : 120) + (isBIG ? 20 : 0); // Add padding between rows
-    }, 160);
+      return acc + (isBIG ? 110 : 90) + (isBIG ? 15 : 0);
+    }, 140);
 
-    canvas.height = totalHeight + padding; // Add extra padding at the bottom
+    canvas.height = totalHeight + padding;
     canvas.width = width;
 
     ctx.clearRect(0, 0, width, canvas.height);
@@ -80,14 +80,14 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     }
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 64px Inter';
+    ctx.font = 'bold 48px Inter';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(settings.title, width - padding - 32, 80);
+    ctx.fillText(settings.title, width - padding - 24, 70);
 
     console.log('Drawing matches with logoCache:', Object.keys(logoCache));
     
-    let currentY = 160;
+    let currentY = 140;
     matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
       drawMatch({
@@ -99,7 +99,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
         settings,
         logoCache
       });
-      currentY += isBIG ? 140 : 120;
+      currentY += isBIG ? 110 : 90;
     });
   };
 
