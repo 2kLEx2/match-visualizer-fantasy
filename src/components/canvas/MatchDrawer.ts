@@ -46,7 +46,7 @@ export const drawMatch = ({
 
   // Time text
   if (settings.showTime) {
-    ctx.font = 'bold 44px Inter';
+    ctx.font = 'bold 36px Inter';
     ctx.fillStyle = '#9CA3AF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
@@ -132,7 +132,7 @@ const team1NameX = team1LogoX - logoTextGap;
   // --- BIG Special Label
   if (isBIG && !('isCustomEntry' in match)) {
     ctx.fillStyle = '#10A37F';
-    ctx.font = 'italic 24px Inter';
+    ctx.font = 'italic 30px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, y + verticalGap / 2 + rowHeight + 6);
