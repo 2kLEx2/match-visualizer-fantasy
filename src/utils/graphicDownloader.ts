@@ -44,8 +44,14 @@ export const downloadGraphic = async (
     
     if (graphicRef instanceof HTMLCanvasElement) {
       console.log('Using canvas directly');
-      // If it's already a canvas, use it directly
-      canvas = graphicRef;
+      // If it's already a canvas, clone it to get a clean copy
+      canvas = document.createElement('canvas');
+      canvas.width = graphicRef.width;
+      canvas.height = graphicRef.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(graphicRef, 0, 0);
+      }
     } else {
       console.log('Using html2canvas to capture DOM element');
       // If it's a DOM element, use html2canvas

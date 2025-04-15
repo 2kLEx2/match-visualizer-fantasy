@@ -1,5 +1,7 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
+import { ImageOff } from 'lucide-react';
 
 interface CanvasMatchGraphicProps {
   matches: Match[];
@@ -19,18 +21,26 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [logoCache, setLogoCache] = useState<Record<string, HTMLImageElement>>({});
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+  const [bgLoading, setBgLoading] = useState(true);
+  const [bgError, setBgError] = useState(false);
 
   // Load background image
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
+    setBgLoading(true);
+    setBgError(false);
     
     img.onload = () => {
+      console.log('Background image loaded successfully');
       setBgImage(img);
+      setBgLoading(false);
     };
     
     img.onerror = () => {
       console.error('Failed to load background image');
+      setBgLoading(false);
+      setBgError(true);
     };
     
     img.src = '/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
@@ -257,6 +267,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     
     // Draw background image if loaded
     if (bgImage) {
+      console.log('Drawing background image');
       ctx.save();
       
       // Create gradient overlay
@@ -278,6 +289,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       ctx.restore();
     } else {
       // Fallback solid background
+      console.log('Using fallback background');
       ctx.fillStyle = settings.backgroundColor;
       ctx.fillRect(0, 0, width, canvas.height);
     }
@@ -300,24 +312,58 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
 
   // Draw when component mounts and when images are loaded
   useEffect(() => {
-    if (imagesLoaded && (bgImage || !matches.length)) {
+    if (imagesLoaded) {
+      console.log('Images loaded, drawing graphic');
       drawGraphic();
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage]);
 
+  // Create a fallback display when the canvas is empty or loading
+  const renderFallback = () => {
+    if (bgLoading) {
+      return (
+        <div className="w-full h-64 flex items-center justify-center bg-gray-800 rounded-xl">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto"></div>
+            <p className="mt-4 text-white text-sm">Loading graphic...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (bgError || !matches.length) {
+      return (
+        <div className="w-full h-64 flex items-center justify-center bg-gray-800 rounded-xl">
+          <div className="text-center">
+            <ImageOff className="h-12 w-12 text-gray-400 mx-auto" />
+            <p className="mt-4 text-white text-sm">
+              {!matches.length ? 'No matches to display' : 'Failed to load image'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={width} 
-      height={height}
-      style={{
-        maxWidth: '100%',
-        height: 'auto',
-        transform: `scale(${settings.scale / 100})`,
-        transformOrigin: 'top left',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      }}
-    />
+    <>
+      {renderFallback()}
+      <canvas 
+        ref={canvasRef} 
+        width={width} 
+        height={height}
+        style={{
+          maxWidth: '100%',
+          height: 'auto',
+          transform: `scale(${settings.scale / 100})`,
+          transformOrigin: 'top left',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          display: bgLoading || bgError || !matches.length ? 'none' : 'block'
+        }}
+      />
+    </>
   );
 };
