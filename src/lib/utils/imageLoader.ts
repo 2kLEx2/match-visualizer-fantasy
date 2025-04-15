@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
@@ -59,14 +58,18 @@ export const loadImage = async (url: string): Promise<boolean> => {
     // Create a promise for this loading operation
     const loadPromise = new Promise<boolean>(async (resolve) => {
       try {
-        // Skip direct loading attempt and go straight to proxy
-        // for external CDN images since we know they'll have CORS issues
-        if (url.includes('pandascore.co') || url.includes('cdn.')) {
+        // For CDN images, go straight to proxy
+        // Skip direct loading attempt for external CDN images since we know they'll have CORS issues
+        const isExternalCDN = url.includes('pandascore.co') || 
+                              url.includes('cdn.') || 
+                              url.includes('cloudfront.net');
+        
+        if (isExternalCDN) {
           await loadViaProxy(thumbnailUrl, resolve);
           return;
         }
         
-        // Try loading directly first as an optimization for same-origin images
+        // Try loading directly first for same-origin images
         const directLoadResult = await loadDirectly(thumbnailUrl);
         
         if (directLoadResult) {
@@ -138,12 +141,14 @@ const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
     if (dataUrlCache.has(url)) {
       const cachedDataUrl = dataUrlCache.get(url);
       if (cachedDataUrl) {
+        console.log('Using cached data URL for:', url);
         const proxyImg = new Image();
         proxyImg.onload = () => {
           loadedImages.set(url, true);
           resolve(true);
         };
         proxyImg.onerror = () => {
+          console.log('Failed to load cached data URL');
           loadedImages.set(url, false);
           resolve(false);
         };
@@ -151,6 +156,8 @@ const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
         return;
       }
     }
+    
+    console.log('Fetching image through proxy:', url);
     
     // Fetch image through the Supabase proxy function
     const { data, error } = await supabase.functions.invoke('proxy-image', {
@@ -173,6 +180,7 @@ const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
 
     // Cache the data URL for future use
     dataUrlCache.set(url, data.imageData);
+    console.log('Successfully received data URL from proxy for:', url);
 
     // Create an image element and load the data URL
     const proxyImg = new Image();

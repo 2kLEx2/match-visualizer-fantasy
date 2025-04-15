@@ -27,18 +27,55 @@ serve(async (req) => {
 
     console.log('Proxying image request:', url);
 
-    // Fetch the image from the provided URL with a proper User-Agent header
-    // and additional headers to help with CORS issues
-    const imageResponse = await fetch(url, {
+    // Check if the URL is from a known problematic domain that needs special handling
+    const isExternalCDN = url.includes('cdn.pandascore.co') || 
+                          url.includes('cdn.') || 
+                          url.includes('cloudfront.net');
+
+    const fetchOptions = {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Origin': 'https://supabase.com',
         'Referer': 'https://supabase.com/',
       },
-    });
+      // Add longer timeout for external CDNs
+      signal: AbortSignal.timeout(isExternalCDN ? 10000 : 5000),
+    };
+    
+    // Attempt to fetch with retries for external CDNs
+    let imageResponse;
+    let retryCount = 0;
+    const maxRetries = isExternalCDN ? 2 : 0;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        imageResponse = await fetch(url, fetchOptions);
+        
+        if (imageResponse.ok) {
+          break; // Success, exit retry loop
+        } else {
+          console.log(`Attempt ${retryCount + 1} failed with status ${imageResponse.status}, ${maxRetries - retryCount} retries left`);
+          retryCount++;
+          
+          if (retryCount <= maxRetries) {
+            // Wait with exponential backoff before retry
+            await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+          }
+        }
+      } catch (fetchError) {
+        console.error(`Fetch attempt ${retryCount + 1} error:`, fetchError.message);
+        retryCount++;
+        
+        if (retryCount <= maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+        } else {
+          throw new Error(`Failed to fetch image after ${maxRetries + 1} attempts: ${fetchError.message}`);
+        }
+      }
+    }
 
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
+    if (!imageResponse || !imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse?.statusText || 'Unknown error'} (${imageResponse?.status || 'Unknown status'})`);
     }
 
     // Get content type
@@ -54,18 +91,20 @@ serve(async (req) => {
     // Create the Base64 data URL
     const dataUrl = `data:${contentType};base64,${base64}`;
 
-    // Return the Base64 encoded image as JSON
+    // Return the Base64 encoded image as JSON with additional CORS headers
     return new Response(JSON.stringify({ 
       imageData: dataUrl,
       success: true,
       contentType: contentType,
-      size: uint8Array.length
+      size: uint8Array.length,
+      source: url,
+      proxy: true
     }), {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+        'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
       }
     });
   } catch (error) {
