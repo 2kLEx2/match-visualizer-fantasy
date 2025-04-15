@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download } from 'lucide-react';
+import { Download, Twitter } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { downloadGraphic } from '@/utils/graphicDownloader';
@@ -136,6 +136,47 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
+  const prepareTwitterShare = async () => {
+    if (!graphicRef.current) {
+      toast({
+        title: "Error",
+        description: "Could not find the graphic element to share.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      const canvas = graphicRef.current.querySelector('canvas');
+      if (!canvas) {
+        throw new Error('Canvas element not found');
+      }
+
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      const tweetText = encodeURIComponent(`Check out our upcoming matches! ${customTitle}`);
+      const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+      
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+
+      toast({
+        title: "Success",
+        description: "Twitter share window opened successfully.",
+      });
+    } catch (error) {
+      console.error('Twitter share error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare Twitter share. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const customMatches: Match[] = customEntries.map(entry => ({
     id: entry.id,
     time: entry.time,
@@ -181,14 +222,25 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             />
           </div>
 
-          <Button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="w-full bg-primary hover:bg-primary/90 text-white"
-          >
-            <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
-            {isDownloading ? 'Downloading...' : 'Download Graphic'}
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white"
+            >
+              <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
+              {isDownloading ? 'Downloading...' : 'Download Graphic'}
+            </Button>
+
+            <Button
+              onClick={prepareTwitterShare}
+              disabled={isDownloading}
+              className="flex-1 bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white"
+            >
+              <Twitter className="w-4 h-4 mr-2" />
+              Share on Twitter
+            </Button>
+          </div>
         </div>
       </Card>
 
