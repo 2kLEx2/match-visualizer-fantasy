@@ -28,7 +28,7 @@ export const drawMatch = ({
   const verticalGap = 24; // Add space between match boxes
   const padding = 48;
   const logoSize = 40; // Slightly smaller logos
-  const logoTextGap = 40; // INCREASED gap between logo and text (from 24 to 40)
+  const logoTextGap = 60; // INCREASED gap between logo and text (from 40 to 60)
   
   // Draw background with adjusted y position to account for gaps
   drawRoundedRect(
@@ -95,26 +95,26 @@ export const drawMatch = ({
     ctx.textBaseline = 'middle';
     ctx.fillText('vs', vsX, verticalCenter);
 
-    // Team 2 (Left aligned, after vs)
+    // Team 2 (Left aligned, after vs) - NOW with logo BEFORE name
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
     ctx.font = 'bold 36px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    
-    const team2Name = truncateText(ctx, match.team2.name, maxTeamNameWidth);
-    ctx.fillText(team2Name, team2X + (settings.showLogos ? logoTextGap : 0), verticalCenter);
 
-    // Draw Team 2 logo with increased spacing
+    // Draw Team 2 logo FIRST (before the name)
     if (settings.showLogos && match.team2.logo) {
       drawTeamLogo(
         ctx, 
         match.team2.logo, 
-        team2X + ctx.measureText(team2Name).width + logoTextGap,
+        team2X,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache
       );
     }
+    
+    const team2Name = truncateText(ctx, match.team2.name, maxTeamNameWidth);
+    ctx.fillText(team2Name, team2X + (settings.showLogos ? logoSize + logoTextGap : 0), verticalCenter);
 
     // Tournament name (far right)
     if (match.tournament) {
