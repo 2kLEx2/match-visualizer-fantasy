@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase/client';
 
-// Create a global cache for data URLs to be accessed across components
-if (!window.dataUrlCache) {
-  window.dataUrlCache = new Map<string, string>();
+interface ImageLoadResult {
+  loaded: boolean;
+  loading: boolean;
 }
 
 /**
