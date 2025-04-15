@@ -1,16 +1,14 @@
-
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download, Twitter } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
-import { downloadGraphic } from '@/utils/graphicDownloader';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase/client';
+import { downloadGraphic } from '@/utils/graphicDownloader';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -34,7 +32,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
-  const [isSharing, setIsSharing] = useState(false);
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -139,66 +136,22 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
-  const prepareTwitterShare = async () => {
-    if (selectedMatches.length === 0 && customEntries.length === 0) {
-      toast({
-        title: "No content to display",
-        description: "Please select matches or add custom entries to generate a graphic.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!graphicRef.current) return;
+    
+    const canvas = graphicRef.current.querySelector('canvas');
+    if (!canvas) return;
 
-    if (!graphicRef.current) {
-      toast({
-        title: "Error",
-        description: "Could not find the graphic element to share.",
-        variant: "destructive",
-      });
-      return;
-    }
+    e.dataTransfer.setData('text/plain', 'graphic');
+    e.dataTransfer.effectAllowed = 'copy';
 
-    setIsSharing(true);
-
-    try {
-      // Get the canvas element
-      const canvas = graphicRef.current.querySelector('canvas');
-      if (!canvas) {
-        throw new Error('Canvas element not found');
-      }
-
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL('image/png');
-      
-      // Prepare tweet text
-      const tweetText = `Check out our upcoming matches! ${customTitle}`;
-      
-      // Call the Supabase Edge Function to share on Twitter
-      const { data, error } = await supabase.functions.invoke('share-twitter', {
-        body: {
-          text: tweetText,
-          imageData: dataUrl
-        }
-      });
-
-      if (error) {
-        console.error('Twitter share error:', error);
-        throw new Error(error.message || 'Failed to share on Twitter');
-      }
-
-      toast({
-        title: "Success",
-        description: "Your graphic has been shared on Twitter!",
-      });
-    } catch (error) {
-      console.error('Twitter share error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to share on Twitter. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSharing(false);
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    if (tempCtx) {
+      tempCanvas.width = canvas.width / 4;
+      tempCanvas.height = canvas.height / 4;
+      tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+      e.dataTransfer.setDragImage(tempCanvas, tempCanvas.width / 2, tempCanvas.height / 2);
     }
   };
 
@@ -247,30 +200,24 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             />
           </div>
 
-          <div className="flex gap-4">
-            <Button
-              onClick={handleDownload}
-              disabled={isDownloading || isSharing}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white"
-            >
-              <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
-              {isDownloading ? 'Downloading...' : 'Download Graphic'}
-            </Button>
-
-            <Button
-              onClick={prepareTwitterShare}
-              disabled={isDownloading || isSharing}
-              className="flex-1 bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white"
-            >
-              <Twitter className={`w-4 h-4 mr-2 ${isSharing ? 'animate-spin' : ''}`} />
-              {isSharing ? 'Sharing...' : 'Share on Twitter'}
-            </Button>
-          </div>
+          <Button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="w-full bg-primary hover:bg-primary/90 text-white"
+          >
+            <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
+            {isDownloading ? 'Downloading...' : 'Download Graphic'}
+          </Button>
         </div>
       </Card>
 
       {(allMatches.length > 0) && (
-        <div ref={graphicRef}>
+        <div 
+          ref={graphicRef}
+          draggable
+          onDragStart={handleDragStart}
+          className="cursor-grab active:cursor-grabbing"
+        >
           <CanvasMatchGraphic
             matches={allMatches}
             settings={{
