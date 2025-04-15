@@ -27,8 +27,8 @@ export const drawMatch = ({
   const rowHeight = 90; // Reduced from 120 for better proportions
   const verticalGap = 24; // Add space between match boxes
   const padding = 48;
-  const logoSize = 40; // Slightly smaller logos
-  const logoTextGap = 60; // INCREASED gap between logo and text (from 40 to 60)
+  const logoSize = 60; // Increased logo size from 40 to 60
+  const logoTextGap = 60; // INCREASED gap between logo and text
   
   // Draw background with adjusted y position to account for gaps
   drawRoundedRect(
