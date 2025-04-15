@@ -1,4 +1,3 @@
-
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -29,7 +28,7 @@ export const drawMatch = ({
   const verticalGap = 24; // Add space between match boxes
   const padding = 48;
   const logoSize = 40; // Slightly smaller logos
-  const logoTextGap = 24; // Increased gap between logo and text
+  const logoTextGap = 40; // INCREASED gap between logo and text (from 24 to 40)
   
   // Draw background with adjusted y position to account for gaps
   drawRoundedRect(
@@ -82,7 +81,7 @@ export const drawMatch = ({
       drawTeamLogo(
         ctx, 
         match.team1.logo, 
-        team1X - logoSize - logoTextGap/2,
+        team1X - logoSize - logoTextGap,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache
