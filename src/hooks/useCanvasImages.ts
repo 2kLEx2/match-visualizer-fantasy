@@ -30,7 +30,7 @@ export const useCanvasImages = (matches: Match[]) => {
     };
   }, [retryCount]);
 
-  // Load team logos - always through proxy to avoid CORS issues
+  // Load team logos - only use dataUrlCache to avoid CORS issues
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
@@ -54,14 +54,13 @@ export const useCanvasImages = (matches: Match[]) => {
       }
       
       try {
-        // Always use the proxy for team logos to avoid CORS issues
         console.log(`Loading team logo via proxy: ${url}`);
         
         // Call loadImage which handles the proxy logic for us
         const success = await loadImage(url);
         
         if (success) {
-          // The proxy returns a data URL, which we need to load into an image
+          // Create a new image element
           const img = new Image();
           img.crossOrigin = "anonymous";
           
@@ -78,12 +77,15 @@ export const useCanvasImages = (matches: Match[]) => {
             checkIfComplete();
           };
           
-          // Get the image from cache if available
+          // IMPORTANT: Get the data URL from the cache - this avoids CORS issues
           const cachedDataUrl = window.dataUrlCache?.get(url);
           if (cachedDataUrl) {
+            console.log(`Using cached data URL for logo: ${url}`);
             img.src = cachedDataUrl;
           } else {
-            img.src = url;
+            console.log(`No cached data URL found for: ${url}`);
+            loadedCount++;
+            checkIfComplete();
           }
         } else {
           console.log(`Failed to load logo via proxy: ${url}`);

@@ -63,7 +63,10 @@ export const drawMatch = ({
     const team2X = centerX + 100;
 
     if (settings.showLogos) {
-      drawTeamLogo(ctx, match.team1.logo, team1X - 280, verticalCenter - 40, 80, logoCache);
+      // Draw team1 logo if it exists in the cache
+      if (match.team1.logo && logoCache[match.team1.logo]) {
+        drawTeamLogo(ctx, match.team1.logo, team1X - 280, verticalCenter - 40, 80, logoCache);
+      }
     }
     
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
@@ -83,7 +86,10 @@ export const drawMatch = ({
     ctx.fillText('vs', vsX, verticalCenter);
 
     if (settings.showLogos) {
-      drawTeamLogo(ctx, match.team2.logo, team2X + 20, verticalCenter - 40, 80, logoCache);
+      // Draw team2 logo if it exists in the cache
+      if (match.team2.logo && logoCache[match.team2.logo]) {
+        drawTeamLogo(ctx, match.team2.logo, team2X + 20, verticalCenter - 40, 80, logoCache);
+      }
     }
     
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
