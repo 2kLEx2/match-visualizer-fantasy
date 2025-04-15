@@ -43,7 +43,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       setBgError(true);
     };
     
-    img.src = '/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
+    // Use a full URL to avoid path resolution issues
+    img.src = 'https://b3b5f642-e8a5-4f27-806f-b4259c301002.lovableproject.com/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
   }, []);
 
   // Pre-load all team logos
