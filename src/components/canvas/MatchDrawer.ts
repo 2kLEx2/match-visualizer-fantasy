@@ -27,7 +27,7 @@ export const drawMatch = ({
   const rowHeight = 90;
   const verticalGap = 24;
   const padding = 48;
-  const logoSize = 60;
+  const logoSize = 49;
   const logoTextGap = 20;
 
   drawRoundedRect(
@@ -63,7 +63,7 @@ export const drawMatch = ({
   } else {
     const maxTeamNameWidth = 360;
     const team1X = centerX - 120;
-    const team2X = centerX + 80;
+    const team2X = centerX + 120;
 
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
     ctx.font = 'bold 32px Inter';
