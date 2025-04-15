@@ -25,42 +25,44 @@ const preloadImages = async (matches: Match[]): Promise<void> => {
 };
 
 export const downloadGraphic = async (
-  graphicRef: HTMLDivElement,
+  graphicRef: HTMLDivElement | HTMLCanvasElement,
   matches: Match[],
   onSuccess: () => void,
   onError: (error: Error) => void
 ) => {
   try {
-    // Preload all team logos
     await preloadImages(matches);
-
-    // Add a small delay to ensure images are rendered
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Capture the HTML element as a canvas
-    const canvas = await html2canvas(graphicRef, {
-      backgroundColor: null,
-      scale: 2, // Higher quality
-      logging: false,
-      width: 600, // Fixed width
-      height: graphicRef.offsetHeight, // Dynamic height based on content
-      windowWidth: 600, // Ensure consistent rendering
-      useCORS: true, // Enable cross-origin image loading
-      allowTaint: true,
-      onclone: (clonedDoc) => {
-        // Force all images in the cloned document to have crossOrigin set
-        const images = clonedDoc.getElementsByTagName('img');
-        for (let img of images) {
-          img.crossOrigin = "anonymous";
+    let canvas: HTMLCanvasElement;
+    
+    if (graphicRef instanceof HTMLCanvasElement) {
+      // If it's already a canvas, use it directly
+      canvas = graphicRef;
+    } else {
+      // If it's a DOM element, use html2canvas
+      canvas = await html2canvas(graphicRef, {
+        backgroundColor: null,
+        scale: 2,
+        logging: false,
+        width: 600,
+        height: graphicRef.offsetHeight,
+        windowWidth: 600,
+        useCORS: true,
+        allowTaint: true,
+        onclone: (clonedDoc) => {
+          const images = clonedDoc.getElementsByTagName('img');
+          for (let img of images) {
+            img.crossOrigin = "anonymous";
+          }
+          
+          const graphics = clonedDoc.querySelectorAll('[data-graphic="true"]');
+          graphics.forEach(graphic => {
+            graphic.setAttribute('style', 'width: 600px; transform: scale(1); transform-origin: top left;');
+          });
         }
-        
-        // Ensure all styles are properly applied in the clone
-        const graphics = clonedDoc.querySelectorAll('[data-graphic="true"]');
-        graphics.forEach(graphic => {
-          graphic.setAttribute('style', 'width: 600px; transform: scale(1); transform-origin: top left;');
-        });
-      }
-    });
+      });
+    }
 
     // Convert canvas to base64 PNG
     const base64Image = canvas.toDataURL('image/png');
@@ -94,7 +96,6 @@ export const downloadGraphic = async (
     document.body.appendChild(link);
     link.click();
     
-    // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 

@@ -1,11 +1,11 @@
-
 import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { MatchGraphic } from './MatchGraphic';
+import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download } from 'lucide-react';
+import { Download, Monitor } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { downloadGraphic } from '@/utils/graphicDownloader';
@@ -31,6 +31,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
+  const [useCanvas, setUseCanvas] = useState(false);
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -54,13 +55,10 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     setIsDownloading(true);
 
     try {
-      // Set scale to 100% for rendering
       setGraphicScale(100);
       
-      // Wait for the scale change to be applied
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Convert custom entries to match format
       const customMatches: Match[] = customEntries.map(entry => ({
         id: entry.id,
         time: entry.time,
@@ -71,7 +69,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
         isCustomEntry: true,
       }));
 
-      // Combine all matches
       const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
         const timeA = parseInt(a.time.replace(':', ''));
         const timeB = parseInt(b.time.replace(':', ''));
@@ -139,7 +136,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
-  // Convert custom entries to match format for the graphic
   const customMatches: Match[] = customEntries.map(entry => ({
     id: entry.id,
     time: entry.time,
@@ -150,7 +146,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     isCustomEntry: true,
   }));
 
-  // Combine and sort all matches by time
   const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
     const timeA = parseInt(a.time.replace(':', ''));
     const timeB = parseInt(b.time.replace(':', ''));
@@ -161,6 +156,18 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setUseCanvas(!useCanvas)}
+              className="flex items-center gap-2"
+            >
+              <Monitor className="w-4 h-4" />
+              {useCanvas ? 'Switch to DOM' : 'Switch to Canvas'}
+            </Button>
+          </div>
+
           <div className="space-y-4">
             <CustomEntryForm
               newEntry={newEntry}
@@ -186,16 +193,29 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
       {(allMatches.length > 0) && (
         <div ref={graphicRef} className="mt-6">
-          <MatchGraphic
-            matches={allMatches}
-            settings={{
-              showLogos: true,
-              showTime: true,
-              backgroundColor: '#1a1b1e',
-              textColor: '#FFFFFF',
-              scale: graphicScale,
-            }}
-          />
+          {useCanvas ? (
+            <CanvasMatchGraphic
+              matches={allMatches}
+              settings={{
+                showLogos: true,
+                showTime: true,
+                backgroundColor: '#1a1b1e',
+                textColor: '#FFFFFF',
+                scale: graphicScale,
+              }}
+            />
+          ) : (
+            <MatchGraphic
+              matches={allMatches}
+              settings={{
+                showLogos: true,
+                showTime: true,
+                backgroundColor: '#1a1b1e',
+                textColor: '#FFFFFF',
+                scale: graphicScale,
+              }}
+            />
+          )}
         </div>
       )}
     </div>
