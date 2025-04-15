@@ -22,6 +22,7 @@ interface RenderRequest {
     showTime: boolean;
     backgroundColor: string;
     textColor: string;
+    title?: string; // Added title as optional
   };
   imageData: string;
 }

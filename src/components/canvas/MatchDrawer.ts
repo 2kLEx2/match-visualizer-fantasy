@@ -1,3 +1,4 @@
+
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -10,6 +11,7 @@ interface DrawMatchOptions {
   settings: {
     showLogos: boolean;
     showTime: boolean;
+    title?: string; // Make title optional so it doesn't break existing code
   };
   logoCache: Record<string, HTMLImageElement>;
 }
