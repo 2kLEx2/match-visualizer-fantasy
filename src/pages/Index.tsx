@@ -4,10 +4,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
 import { GraphicCustomizer } from '@/components/GraphicCustomizer';
 import { Badge } from '@/components/ui/badge';
-import { getUpcomingMatches, subscribeToMatches, getUpcomingMatchesFromAPI, Match } from '@/lib/api/matches';
+import { getUpcomingMatches, subscribeToMatches, cleanupOldMatches, Match } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, RefreshCcw } from 'lucide-react';
+import { RefreshCw, RefreshCcw, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase/client';
 
@@ -15,6 +15,7 @@ const Index = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -72,6 +73,9 @@ const Index = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
+      // Clean up old matches first
+      await cleanupOldMatches();
+      
       const { data, error } = await supabase.functions.invoke('sync-matches');
       
       if (error) throw error;
@@ -96,6 +100,31 @@ const Index = () => {
     }
   };
 
+  const handleCleanup = async () => {
+    setIsCleaning(true);
+    try {
+      await cleanupOldMatches();
+      
+      // Refresh the UI after cleanup
+      await queryClient.invalidateQueries({ queryKey: ['matches'] });
+      await refetch();
+      
+      toast({
+        title: "Cleanup Successful",
+        description: "Successfully removed all old matches.",
+      });
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      toast({
+        title: "Cleanup Failed",
+        description: "Failed to clean up old matches. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   // Convert selected match IDs to actual Match objects
   const selectedMatchObjects = matches?.filter(match => 
     selectedMatches.includes(match.id)
@@ -114,7 +143,17 @@ const Index = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Upcoming Matches</h2>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCleanup}
+                    disabled={isCleaning}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className={`w-4 h-4 ${isCleaning ? 'animate-spin' : ''}`} />
+                    {isCleaning ? 'Cleaning...' : 'Clean Old'}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -123,7 +162,7 @@ const Index = () => {
                     className="flex items-center gap-2"
                   >
                     <RefreshCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                    {isSyncing ? 'Syncing...' : 'Sync Matches'}
+                    {isSyncing ? 'Syncing...' : 'Sync All'}
                   </Button>
                   <Button
                     variant="outline"

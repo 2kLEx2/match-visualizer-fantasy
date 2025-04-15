@@ -71,6 +71,25 @@ export async function getUpcomingMatches(): Promise<Match[]> {
   }
 }
 
+// Manually clean up old matches from the database
+export async function cleanupOldMatches(): Promise<void> {
+  console.log('Manually cleaning up old matches');
+  try {
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .lt('start_time', new Date().toISOString());
+    
+    if (error) {
+      console.error('Error cleaning up old matches:', error);
+    } else {
+      console.log('Successfully cleaned up old matches');
+    }
+  } catch (error) {
+    console.error('Exception during match cleanup:', error);
+  }
+}
+
 export function transformMatchesData(data: any[]): Match[] {
   return data.map(match => ({
     id: match.id,

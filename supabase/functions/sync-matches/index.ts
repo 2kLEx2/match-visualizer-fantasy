@@ -127,41 +127,56 @@ Deno.serve(async (req) => {
       console.log(`Processing match: ${match.team1_name} vs ${match.team2_name} (${match.tournament})`)
     });
 
-    // Clean up old matches first
+    // Clean up old matches first - thorough cleanup
+    console.log('Cleaning up old matches...')
     const { error: deleteError } = await supabase
       .from('matches')
       .delete()
-      .lt('start_time', new Date().toISOString())
+      .lt('start_time', now.toISOString())
 
     if (deleteError) {
       console.error('Error cleaning up old matches:', deleteError)
       throw deleteError
     }
+    console.log('Old matches removed successfully')
 
-    if (relevantMatches.length > 0) {
-      // Upsert new matches
-      const { error: upsertError } = await supabase
-        .from('matches')
-        .upsert(relevantMatches, {
-          onConflict: 'id',
-          count: 'exact'
-        })
-
-      if (upsertError) {
-        console.error('Error upserting matches:', upsertError)
-        throw upsertError
-      }
-
-      console.log(`Successfully synced ${relevantMatches.length} matches`)
-    } else {
+    // Delete all existing matches and insert fresh data to prevent duplicates
+    if (relevantMatches.length === 0) {
       console.log('No matches to sync')
+      return new Response(
+        JSON.stringify({
+          success: true,
+          matchesSync: 0,
+          matchesDeleted: 0,
+          timestamp: now.toISOString()
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
     }
+
+    console.log('Inserting updated matches data')
+    const { error: upsertError } = await supabase
+      .from('matches')
+      .upsert(relevantMatches, {
+        onConflict: 'id',
+        count: 'exact'
+      })
+
+    if (upsertError) {
+      console.error('Error upserting matches:', upsertError)
+      throw upsertError
+    }
+
+    console.log(`Successfully synced ${relevantMatches.length} matches`)
 
     return new Response(
       JSON.stringify({
         success: true,
         matchesSync: relevantMatches.length,
-        timestamp: new Date().toISOString()
+        timestamp: now.toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
