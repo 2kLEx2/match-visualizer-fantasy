@@ -30,7 +30,7 @@ export const drawMatch = ({
   const verticalGap = 24; // Add space between match boxes
   const padding = 48;
   const logoSize = 60; // Increased logo size from 40 to 60
-  const logoTextGap = 60; // INCREASED gap between logo and text
+  const logoTextGap = 20; // Gap between logo and text
   
   // Draw background with adjusted y position to account for gaps
   drawRoundedRect(
@@ -66,8 +66,8 @@ export const drawMatch = ({
     ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
   } else {
     const maxTeamNameWidth = 360; // Slightly reduced to accommodate more spacing
-    const team1X = centerX - 100; // Adjusted positions for better spacing
-    const team2X = centerX + 100;
+    const team1X = centerX - 120; // Adjusted positions for better spacing
+    const team2X = centerX + 80;
 
     // Team 1 (Right aligned, before vs)
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
@@ -75,15 +75,16 @@ export const drawMatch = ({
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     
-    // Draw Team 1 logo 
+    // Draw Team 1 logo - maintain aspect ratio by using a square area
     if (settings.showLogos && match.team1.logo) {
       drawTeamLogo(
         ctx, 
         match.team1.logo, 
-        team1X - logoSize,
+        team1X - logoSize - 10,
         verticalCenter - logoSize/2, 
         logoSize, 
-        logoCache
+        logoCache,
+        true // preserve aspect ratio
       );
     }
 
@@ -97,21 +98,22 @@ export const drawMatch = ({
     ctx.textBaseline = 'middle';
     ctx.fillText('vs', vsX, verticalCenter);
 
-    // Team 2 (Left aligned, after vs) - NOW with logo BEFORE name
+    // Team 2 (Left aligned, after vs)
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
     ctx.font = 'bold 36px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    // Draw Team 2 logo FIRST (before the name)
+    // Draw Team 2 logo - maintain aspect ratio by using a square area
     if (settings.showLogos && match.team2.logo) {
       drawTeamLogo(
         ctx, 
         match.team2.logo, 
-        team2X,
+        team2X + 10,
         verticalCenter - logoSize/2, 
         logoSize, 
-        logoCache
+        logoCache,
+        true // preserve aspect ratio
       );
     }
     

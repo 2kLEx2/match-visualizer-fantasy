@@ -41,6 +41,7 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
           src={fallbackImage}
           alt={`${teamName} logo fallback`}
           className="object-contain w-full h-full"
+          style={{ aspectRatio: '1/1' }}
         />
         <AvatarFallback>
           <Shield className="w-5 h-5 text-gray-400" />
@@ -50,12 +51,13 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
   }
 
   return (
-    <Avatar className="w-[24px] h-[24px] flex items-center justify-center bg-transparent">
+    <Avatar className="w-[24px] h-[24px] flex items-center justify-center bg-transparent border-0">
       {isLoaded ? (
         <AvatarImage
           src={safeLogo}
           alt={`${teamName} logo`}
           className="object-contain w-full h-full"
+          style={{ maxWidth: '100%', maxHeight: '100%', aspectRatio: 'auto' }}
           onError={(e) => {
             console.log(`Failed to load team logo: ${safeLogo}`);
             setHasError(true);
@@ -66,6 +68,7 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
           src={fallbackImage}
           alt={`${teamName} logo fallback`}
           className="object-contain w-full h-full"
+          style={{ aspectRatio: '1/1' }}
         />
       )}
       <AvatarFallback>
@@ -76,4 +79,3 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
 });
 
 TeamLogo.displayName = 'TeamLogo';
-
