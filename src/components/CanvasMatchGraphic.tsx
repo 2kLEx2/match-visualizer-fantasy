@@ -140,10 +140,9 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     
     // Background
     ctx.fillStyle = isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)';
-    ctx.fillRect(padding, y, width - (padding * 2), rowHeight);
     
     // Add rounded corners
-    const radius = 5;
+    const radius = 8;
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(padding + radius, y);
@@ -165,8 +164,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     
     // Time section
     if (settings.showTime) {
+      ctx.font = 'bold 14px Inter';
       ctx.fillStyle = '#9CA3AF';
-      ctx.font = '14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.time, padding + 12, verticalCenter);
@@ -175,47 +174,55 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     // Team names and logos
     const timeWidth = settings.showTime ? 70 : 0;
     const teamSection = width - timeWidth - (padding * 4);
-    const centerX = timeWidth + (teamSection / 2) + padding;
+    const centerX = padding + timeWidth + (teamSection / 2);
 
     if ('isCustomEntry' in match && match.isCustomEntry) {
       // Custom entry - single title
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-      ctx.font = '14px Inter';
+      ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(match.team1.name, centerX - 100, verticalCenter);
+      ctx.fillText(match.team1.name, centerX - 140, verticalCenter);
     } else {
-      const team1TextX = centerX - 30;
-      const team2TextX = centerX + 30;
+      // Team 1 position
+      const team1X = centerX - 110;
+      
+      // Team 2 position
+      const team2X = centerX + 30;
+      
+      // VS position
+      const vsX = centerX - 40;
+      
+      // Team 1 logo (left of team name)
+      if (settings.showLogos) {
+        drawLogo(ctx, match.team1.logo, team1X - 40, verticalCenter - 12);
+      }
       
       // Team 1 name
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-      ctx.font = '14px Inter';
-      ctx.textAlign = 'right';
+      ctx.font = 'bold 14px Inter';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(match.team1.name, team1TextX, verticalCenter);
+      ctx.fillText(match.team1.name, team1X, verticalCenter);
 
       // VS
       ctx.fillStyle = '#6B7280';
       ctx.font = '12px Inter';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('vs', centerX, verticalCenter);
+      ctx.fillText('vs', vsX, verticalCenter);
 
+      // Team 2 logo (left of team name)
+      if (settings.showLogos) {
+        drawLogo(ctx, match.team2.logo, team2X - 40, verticalCenter - 12);
+      }
+      
       // Team 2 name
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
+      ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(match.team2.name, team2TextX, verticalCenter);
-
-      // Draw team logos if enabled
-      if (settings.showLogos) {
-        // Team 1 logo (positioned to the left of the team name)
-        drawLogo(ctx, match.team1.logo, team1TextX - 34, verticalCenter - 12);
-        
-        // Team 2 logo (positioned to the right of vs, before the team name)
-        drawLogo(ctx, match.team2.logo, team2TextX + 5, verticalCenter - 12);
-      }
+      ctx.fillText(match.team2.name, team2X, verticalCenter);
 
       // Tournament name if available
       if (match.tournament) {
@@ -223,7 +230,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
         ctx.font = '12px Inter';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(match.tournament, width - (padding * 2), verticalCenter);
+        const tournamentX = width - padding - 12;
+        ctx.fillText(match.tournament, tournamentX, verticalCenter);
       }
     }
 
@@ -233,7 +241,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       ctx.font = 'italic 12px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillText('Anwesenheitspflicht', timeWidth + padding, y + rowHeight + 10);
+      ctx.fillText('Anwesenheitspflicht', timeWidth + padding, y + rowHeight + 4);
     }
   };
 
@@ -245,7 +253,17 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     if (!ctx) return;
 
     // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Draw background with image
     ctx.fillStyle = settings.backgroundColor;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Add background image
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+    bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+    bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
 
     // Calculate required height based on matches
@@ -262,9 +280,9 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     // Draw title
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 28px Inter';
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Watchparty Schedule', width / 2, 40);
+    ctx.fillText('Watchparty Schedule', width - padding - 12, 40);
 
     // Draw matches
     let currentY = 80;
@@ -292,6 +310,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
         height: `${height}px`,
         transform: `scale(${settings.scale / 100})`,
         transformOrigin: 'top left',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     />
   );
