@@ -1,7 +1,7 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff } from 'lucide-react';
+import { loadImage } from '@/lib/utils/imageLoader';
 
 interface CanvasMatchGraphicProps {
   matches: Match[];
@@ -24,27 +24,58 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const [bgLoading, setBgLoading] = useState(true);
   const [bgError, setBgError] = useState(false);
 
-  // Load background image
+  // Load background image using the image loader utility
   useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
+    const bgImageUrl = 'https://b3b5f642-e8a5-4f27-806f-b4259c301002.lovableproject.com/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
     setBgLoading(true);
     setBgError(false);
     
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    // First try to load directly
     img.onload = () => {
       console.log('Background image loaded successfully');
       setBgImage(img);
       setBgLoading(false);
     };
     
-    img.onerror = () => {
-      console.error('Failed to load background image');
-      setBgLoading(false);
-      setBgError(true);
+    img.onerror = async () => {
+      console.log('Direct loading failed, trying proxy loading for background');
+      
+      // If direct loading fails, try using our image loader utility
+      try {
+        const success = await loadImage(bgImageUrl);
+        
+        if (success) {
+          console.log('Background loaded via proxy successfully');
+          // Recreate the image after proxy success
+          const proxyImg = new Image();
+          proxyImg.crossOrigin = "anonymous";
+          proxyImg.onload = () => {
+            console.log('Background image loaded via proxy');
+            setBgImage(proxyImg);
+            setBgLoading(false);
+          };
+          proxyImg.onerror = () => {
+            console.error('Failed to load background image even after proxy');
+            setBgLoading(false);
+            setBgError(true);
+          };
+          proxyImg.src = bgImageUrl;
+        } else {
+          console.error('Failed to load background image through proxy');
+          setBgLoading(false);
+          setBgError(true);
+        }
+      } catch (error) {
+        console.error('Error loading background image:', error);
+        setBgLoading(false);
+        setBgError(true);
+      }
     };
     
-    // Use a full URL to avoid path resolution issues
-    img.src = 'https://b3b5f642-e8a5-4f27-806f-b4259c301002.lovableproject.com/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
+    img.src = bgImageUrl;
   }, []);
 
   // Pre-load all team logos
@@ -61,33 +92,53 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     
     const logoElements: Record<string, HTMLImageElement> = {};
     let loadedCount = 0;
+    const totalLogos = teamLogos.length;
     
-    teamLogos.forEach(url => {
-      if (!url) return;
-      
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      
-      img.onload = () => {
-        logoElements[url] = img;
+    teamLogos.forEach(async (url) => {
+      if (!url) {
         loadedCount++;
-        if (loadedCount === teamLogos.length) {
-          console.log('All logos loaded successfully');
+        if (loadedCount === totalLogos) {
           setLogoCache(logoElements);
           setImagesLoaded(true);
         }
-      };
+        return;
+      }
       
-      img.onerror = () => {
-        console.log(`Failed to load logo: ${url}`);
+      // Try to load through our image loader first
+      try {
+        const success = await loadImage(url);
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        img.onload = () => {
+          logoElements[url] = img;
+          loadedCount++;
+          if (loadedCount === totalLogos) {
+            console.log('All logos loaded successfully');
+            setLogoCache(logoElements);
+            setImagesLoaded(true);
+          }
+        };
+        
+        img.onerror = () => {
+          console.log(`Failed to load logo: ${url}`);
+          loadedCount++;
+          if (loadedCount === totalLogos) {
+            setLogoCache(logoElements);
+            setImagesLoaded(true);
+          }
+        };
+        
+        img.src = url;
+      } catch (error) {
+        console.error(`Error loading logo ${url}:`, error);
         loadedCount++;
-        if (loadedCount === teamLogos.length) {
+        if (loadedCount === totalLogos) {
           setLogoCache(logoElements);
           setImagesLoaded(true);
         }
-      };
-      
-      img.src = url;
+      }
     });
   }, [matches]);
 
@@ -340,6 +391,14 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
             <p className="mt-4 text-white text-sm">
               {!matches.length ? 'No matches to display' : 'Failed to load image'}
             </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
           </div>
         </div>
       );

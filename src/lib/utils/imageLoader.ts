@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase/client';
 
 type ImageLoadResult = {
@@ -27,6 +28,7 @@ const convertToThumbnail = (url: string): string => {
 
 // Keep track of images we've already tried to load to prevent duplicate requests
 const loadingCache = new Map<string, Promise<boolean>>();
+const loadedImages = new Map<string, boolean>();
 
 /**
  * Loads an image via the Supabase proxy to handle CORS issues.
@@ -37,6 +39,11 @@ export const loadImage = async (url: string): Promise<boolean> => {
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       console.warn('Invalid image URL:', url);
       return false;
+    }
+    
+    // Check if this image has already been loaded successfully
+    if (loadedImages.has(url)) {
+      return loadedImages.get(url) || false;
     }
     
     // Check if this image is already being loaded
@@ -69,6 +76,7 @@ export const loadImage = async (url: string): Promise<boolean> => {
         
         if (directLoadResult) {
           console.log('Successfully loaded image directly:', thumbnailUrl);
+          loadedImages.set(url, true);
           resolve(true);
           return;
         }
@@ -83,12 +91,14 @@ export const loadImage = async (url: string): Promise<boolean> => {
 
         if (error) {
           console.error('Proxy request failed:', error);
+          loadedImages.set(url, false);
           resolve(false);
           return;
         }
 
         if (!data || !data.success || !data.imageData) {
           console.error('Invalid response from proxy:', data);
+          loadedImages.set(url, false);
           resolve(false);
           return;
         }
@@ -97,15 +107,18 @@ export const loadImage = async (url: string): Promise<boolean> => {
         const proxyImg = new Image();
         proxyImg.onload = () => {
           console.log('Successfully loaded image via proxy');
+          loadedImages.set(url, true);
           resolve(true);
         };
         proxyImg.onerror = (e) => {
           console.error('Failed to load image after proxy:', e);
+          loadedImages.set(url, false);
           resolve(false);
         };
         proxyImg.src = data.imageData;
       } catch (error) {
         console.error('Image loading error:', error);
+        loadedImages.set(url, false);
         resolve(false);
       }
     });
@@ -121,6 +134,7 @@ export const loadImage = async (url: string): Promise<boolean> => {
     return loadPromise;
   } catch (fetchError) {
     console.error('Image loading error:', fetchError);
+    loadedImages.set(url, false);
     return false;
   }
 };
