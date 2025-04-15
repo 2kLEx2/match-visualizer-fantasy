@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
@@ -18,9 +17,7 @@ interface CanvasMatchGraphicProps {
   height?: number;
 }
 
-// Hardcoded fallback background in case loading fails
 const FALLBACK_BG = 'linear-gradient(to right bottom, #1e293b, #0f172a)';
-// Default background URL - choose a reliable one
 const DEFAULT_BG_URL = 'https://images.unsplash.com/photo-1613841683751-87a67163b44c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80';
 
 export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 400 }: CanvasMatchGraphicProps) => {
@@ -32,79 +29,24 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const [bgError, setBgError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Background image loading
   useEffect(() => {
-    const bgImageUrl = DEFAULT_BG_URL;
-    setBgLoading(true);
-    setBgError(false);
-    
-    console.log('Loading background from:', bgImageUrl);
-    
-    const loadBackgroundImage = async () => {
-      try {
-        // Try direct loading first since it's a reliable source
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        
-        const loadPromise = new Promise<void>((resolve, reject) => {
-          img.onload = () => {
-            console.log('Background image loaded successfully');
-            setBgImage(img);
-            setBgLoading(false);
-            resolve();
-          };
-          
-          img.onerror = () => {
-            console.error('Direct background load failed, trying proxy');
-            reject(new Error('Direct load failed'));
-          };
-        });
-        
-        // Set the source and start loading
-        img.src = bgImageUrl;
-        
-        try {
-          // Try direct loading first with a timeout
-          await Promise.race([
-            loadPromise,
-            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-          ]);
-        } catch (directError) {
-          console.log('Trying proxy for background...');
-          // If direct loading fails, try using the proxy
-          const success = await loadImage(bgImageUrl);
-          
-          if (success) {
-            console.log('Background loaded via proxy');
-            // We need to create a new image since the proxy returns a data URL
-            const proxyImg = new Image();
-            proxyImg.crossOrigin = "anonymous";
-            proxyImg.onload = () => {
-              console.log('Background image ready from proxy');
-              setBgImage(proxyImg);
-              setBgLoading(false);
-            };
-            proxyImg.onerror = () => {
-              console.error('Failed to load background from proxy data URL');
-              setBgLoading(false);
-              setBgError(true);
-            };
-            proxyImg.src = bgImageUrl;
-          } else {
-            throw new Error('Background loading failed via proxy');
-          }
-        }
-      } catch (error) {
-        console.error('Error in background loading process:', error);
-        setBgLoading(false);
-        setBgError(true);
-      }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/lovable-uploads/22f955af-b708-4ec0-b29d-ed039808702f.png";
+
+    img.onload = () => {
+      console.log('Background image loaded successfully');
+      setBgImage(img);
+      setBgLoading(false);
     };
     
-    loadBackgroundImage();
-  }, [retryCount]); // Depend on retryCount to allow manual refreshing
+    img.onerror = () => {
+      console.error('Failed to load background');
+      setBgLoading(false);
+      setBgError(true);
+    };
+  }, [retryCount]);
 
-  // Team logos loading
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
@@ -128,7 +70,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       }
       
       try {
-        // Use our improved loadImage utility
         const success = await loadImage(url);
         
         if (success) {
@@ -167,7 +108,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
         setImagesLoaded(true);
       }
     }
-  }, [matches, retryCount]); // Depend on retryCount to allow manual refreshing
+  }, [matches, retryCount]);
 
   const drawLogo = (
     ctx: CanvasRenderingContext2D,
@@ -342,7 +283,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       ctx.restore();
     } else {
       console.log('Using fallback background');
-      // Create a gradient background as fallback
       const gradient = ctx.createLinearGradient(0, 0, width, canvas.height);
       gradient.addColorStop(0, '#1e293b');
       gradient.addColorStop(1, '#0f172a');
@@ -366,7 +306,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
 
   useEffect(() => {
     if (imagesLoaded) {
-      console.log('Images loaded, drawing graphic');
       drawGraphic();
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage]);
@@ -430,7 +369,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
           borderRadius: '12px',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           display: bgLoading || bgError || !matches.length ? 'none' : 'block',
-          background: FALLBACK_BG, // Added a fallback background color
+          background: FALLBACK_BG,
         }}
       />
     </>
