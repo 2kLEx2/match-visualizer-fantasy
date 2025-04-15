@@ -1,10 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
 
-type ImageLoadResult = {
-  loaded: boolean;
-  loading: boolean;
-};
-
 // Create a global cache for data URLs to be accessed across components
 if (!window.dataUrlCache) {
   window.dataUrlCache = new Map<string, string>();
@@ -62,9 +57,9 @@ export const loadImage = async (url: string): Promise<boolean> => {
     // Create a promise for this loading operation
     const loadPromise = new Promise<boolean>(async (resolve) => {
       try {
-        // Skip direct loading and always use proxy for CDN images
+        // Always use proxy for CDN images
         console.log('Using proxy for CDN image:', thumbnailUrl);
-        await loadViaProxy(thumbnailUrl, resolve);
+        await loadViaProxy(thumbnailUrl, url, resolve);
       } catch (error) {
         console.error('Image loading error:', error);
         loadedImages.set(url, false);
@@ -90,70 +85,65 @@ export const loadImage = async (url: string): Promise<boolean> => {
 
 /**
  * Helper function to load an image via the proxy
+ * @param thumbnailUrl The thumbnail URL to load via proxy
+ * @param originalUrl The original URL to use as the cache key
+ * @param resolve The promise resolver function
  */
-const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
+const loadViaProxy = async (thumbnailUrl: string, originalUrl: string, resolve: (value: boolean) => void) => {
   try {
     // Check if we already have a proxied data URL for this image in the global cache
-    if (window.dataUrlCache.has(url)) {
-      const cachedDataUrl = window.dataUrlCache.get(url);
+    if (window.dataUrlCache.has(originalUrl)) {
+      const cachedDataUrl = window.dataUrlCache.get(originalUrl);
       if (cachedDataUrl) {
-        console.log('Using cached data URL for:', url);
-        const proxyImg = new Image();
-        proxyImg.onload = () => {
-          loadedImages.set(url, true);
-          resolve(true);
-        };
-        proxyImg.onerror = () => {
-          console.log('Failed to load cached data URL');
-          loadedImages.set(url, false);
-          resolve(false);
-        };
-        proxyImg.src = cachedDataUrl;
+        console.log('Using cached data URL for:', originalUrl);
+        loadedImages.set(originalUrl, true);
+        resolve(true);
         return;
       }
     }
     
-    console.log('Fetching image through proxy:', url);
+    console.log('Fetching image through proxy:', thumbnailUrl);
     
     // Fetch image through the Supabase proxy function
     const { data, error } = await supabase.functions.invoke('proxy-image', {
-      body: { url }
+      body: { url: thumbnailUrl }
     });
 
     if (error) {
       console.error('Proxy request failed:', error);
-      loadedImages.set(url, false);
+      loadedImages.set(originalUrl, false);
       resolve(false);
       return;
     }
 
     if (!data || !data.success || !data.imageData) {
       console.error('Invalid response from proxy:', data);
-      loadedImages.set(url, false);
+      loadedImages.set(originalUrl, false);
       resolve(false);
       return;
     }
 
-    // Store in the global cache
-    window.dataUrlCache.set(url, data.imageData);
-    console.log('Successfully received data URL from proxy for:', url);
+    // Store in the global cache using the original URL as the key
+    window.dataUrlCache.set(originalUrl, data.imageData);
+    console.log('Successfully received data URL from proxy for:', thumbnailUrl);
+    console.log('Cached with key:', originalUrl);
 
     // Create an image element and load the data URL
     const proxyImg = new Image();
     proxyImg.onload = () => {
       console.log('Successfully loaded image via proxy');
-      loadedImages.set(url, true);
+      loadedImages.set(originalUrl, true);
       resolve(true);
     };
     proxyImg.onerror = (e) => {
       console.error('Failed to load image after proxy:', e);
-      loadedImages.set(url, false);
+      loadedImages.set(originalUrl, false);
       resolve(false);
     };
     proxyImg.src = data.imageData;
   } catch (error) {
     console.error('Proxy loading error:', error);
-    loadedImages.set(url, false);
+    loadedImages.set(originalUrl, false);
     resolve(false);
   }
 };

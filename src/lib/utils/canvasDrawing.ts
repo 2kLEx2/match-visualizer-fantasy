@@ -1,4 +1,3 @@
-
 export const drawRoundedRect = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -33,8 +32,29 @@ export const drawTeamLogo = (
   size: number = 80,
   logoCache: Record<string, HTMLImageElement>
 ) => {
-  if (!url || !logoCache[url]) {
-    console.log(`Cannot draw logo - missing url or not in cache: ${url}`);
+  if (!url) {
+    console.log(`Cannot draw logo - missing URL`);
+    return;
+  }
+  
+  if (!logoCache[url]) {
+    console.log(`Cannot draw logo - not in cache: ${url}`);
+    
+    const dataUrl = window.dataUrlCache?.get(url);
+    if (dataUrl) {
+      console.log(`Found in global dataUrlCache, drawing directly: ${url}`);
+      try {
+        const tempImg = new Image();
+        tempImg.onload = () => {
+          ctx.save();
+          ctx.drawImage(tempImg, x, y, size, size);
+          ctx.restore();
+        };
+        tempImg.src = dataUrl;
+      } catch (e) {
+        console.error('Error drawing logo from dataUrlCache:', e);
+      }
+    }
     return;
   }
   

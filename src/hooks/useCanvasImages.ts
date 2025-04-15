@@ -57,7 +57,7 @@ export const useCanvasImages = (matches: Match[]) => {
       try {
         console.log(`Loading team logo via proxy: ${url}`);
         
-        // Call loadImage which handles the proxy logic for us
+        // First, try to load the image through the proxy
         const success = await loadImage(url);
         
         if (success) {
@@ -84,7 +84,7 @@ export const useCanvasImages = (matches: Match[]) => {
             console.log(`Using cached data URL for logo: ${url}`);
             img.src = cachedDataUrl;
           } else {
-            console.log(`No cached data URL found for: ${url}`);
+            console.error(`No cached data URL found for: ${url}`);
             loadedCount++;
             checkIfComplete();
           }
@@ -103,8 +103,16 @@ export const useCanvasImages = (matches: Match[]) => {
     function checkIfComplete() {
       console.log(`Loaded ${loadedCount}/${totalLogos} logos`);
       if (loadedCount === totalLogos) {
-        console.log('All logos processed:', logoElements);
-        setLogoCache(logoElements);
+        // Log the actual keys to debug the issue
+        console.log('All logos processed, cache keys:', Object.keys(logoElements));
+        
+        // Only update the state if we actually have logos
+        if (Object.keys(logoElements).length > 0) {
+          setLogoCache(prevCache => ({...prevCache, ...logoElements}));
+        } else {
+          console.warn('No logos were successfully loaded into the cache');
+        }
+        
         setImagesLoaded(true);
       }
     }
