@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { MatchGraphic } from './MatchGraphic';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download, Monitor } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { downloadGraphic } from '@/utils/graphicDownloader';
@@ -32,7 +31,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [customEntries, setCustomEntries] = useState<CustomEntry[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
-  const [useCanvas, setUseCanvas] = useState(false);
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
 
   const handleDownload = async () => {
@@ -158,30 +156,17 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
-          <div className="flex flex-col space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium text-gray-200">
-                Graphic Title
-              </label>
-              <Input
-                id="title"
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Enter custom title"
-                className="bg-white/5 border-0 text-white placeholder:text-gray-400"
-              />
-            </div>
-            <div className="flex justify-end mb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUseCanvas(!useCanvas)}
-                className="flex items-center gap-2"
-              >
-                <Monitor className="w-4 h-4" />
-                {useCanvas ? 'Switch to DOM' : 'Switch to Canvas'}
-              </Button>
-            </div>
+          <div className="space-y-2">
+            <label htmlFor="title" className="text-sm font-medium text-gray-200">
+              Graphic Title
+            </label>
+            <Input
+              id="title"
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              placeholder="Enter custom title"
+              className="bg-white/5 border-0 text-white placeholder:text-gray-400"
+            />
           </div>
 
           <div className="space-y-4">
@@ -208,32 +193,18 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       </Card>
 
       {(allMatches.length > 0) && (
-        <div ref={graphicRef} className="mt-6">
-          {useCanvas ? (
-            <CanvasMatchGraphic
-              matches={allMatches}
-              settings={{
-                showLogos: true,
-                showTime: true,
-                backgroundColor: '#1a1b1e',
-                textColor: '#FFFFFF',
-                scale: graphicScale,
-                title: customTitle,
-              }}
-            />
-          ) : (
-            <MatchGraphic
-              matches={allMatches}
-              settings={{
-                showLogos: true,
-                showTime: true,
-                backgroundColor: '#1a1b1e',
-                textColor: '#FFFFFF',
-                scale: graphicScale,
-                title: customTitle,
-              }}
-            />
-          )}
+        <div ref={graphicRef}>
+          <CanvasMatchGraphic
+            matches={allMatches}
+            settings={{
+              showLogos: true,
+              showTime: true,
+              backgroundColor: '#1a1b1e',
+              textColor: '#FFFFFF',
+              scale: graphicScale,
+              title: customTitle,
+            }}
+          />
         </div>
       )}
     </div>

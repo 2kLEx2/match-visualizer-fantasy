@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
@@ -20,6 +19,7 @@ interface CanvasMatchGraphicProps {
     backgroundColor: string;
     textColor: string;
     scale: number;
+    title: string;
   };
   width?: number;
   height?: number;
@@ -83,7 +83,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     ctx.font = 'bold 64px Inter';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Watchparty Schedule', width - padding - 32, 80);
+    ctx.fillText(settings.title, width - padding - 32, 80);
 
     console.log('Drawing matches with logoCache:', Object.keys(logoCache));
     
