@@ -22,7 +22,7 @@ export async function getUpcomingMatchesFromSupabase(): Promise<Match[]> {
     .from('matches')
     .select('*')
     .gte('start_time', new Date().toISOString())
-    .lte('start_time', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+    .lte('start_time', new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()) // 48 hours
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -37,7 +37,6 @@ export async function getUpcomingMatchesFromSupabase(): Promise<Match[]> {
 export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
   try {
     // Get the PandaScore API key from environment variables or config
-    // In production, this should come from a secure server-side source
     const apiKey = import.meta.env.VITE_PANDASCORE_API_KEY;
     
     if (!apiKey) {
@@ -45,22 +44,24 @@ export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
       return [];
     }
 
-    // Current date and tomorrow for filtering
+    // Current date and future date for filtering
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(23, 59, 59, 999);
+    const future = new Date(now);
+    future.setDate(future.getDate() + 2); // Get next 48 hours
+    future.setHours(23, 59, 59, 999);
 
     // Format dates for PandaScore API
     const fromDate = now.toISOString().split('.')[0] + 'Z';
-    const toDate = tomorrow.toISOString().split('.')[0] + 'Z';
+    const toDate = future.toISOString().split('.')[0] + 'Z';
     
     // Construct URL with parameters
     const url = new URL('https://api.pandascore.co/csgo/matches/upcoming');
     url.searchParams.append('range[begin_at]', `${fromDate},${toDate}`);
     url.searchParams.append('sort', 'begin_at');
-    url.searchParams.append('per_page', '50');
-    url.searchParams.append('filter[status]', 'not_started');
+    url.searchParams.append('per_page', '100'); // Increased for more matches
+    // Remove status filter to get all upcoming matches
+
+    console.log(`Fetching matches from PandaScore API: ${url.toString()}`);
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -79,18 +80,18 @@ export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
     const data = await response.json();
     console.log(`Found ${data.length} upcoming matches from API`);
 
-    // Transform API data to match our interface
+    // Transform API data to match our interface with more lenient filtering
     return data
       .filter((match: any) => {
-        const hasOpponents = match.opponents && 
-          match.opponents.length >= 2 &&
-          match.opponents[0]?.opponent &&
-          match.opponents[1]?.opponent;
+        // Accept matches with at least one opponent
+        const hasAtLeastOneOpponent = match.opponents && 
+          match.opponents.length > 0 && 
+          match.opponents[0]?.opponent;
         
-        if (!hasOpponents) {
+        if (!hasAtLeastOneOpponent) {
           console.log(`Skipping match ${match.id} due to missing opponents`);
         }
-        return hasOpponents;
+        return hasAtLeastOneOpponent;
       })
       .map((match: any) => ({
         id: match.id.toString(),
@@ -99,8 +100,8 @@ export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
           logo: match.opponents[0]?.opponent.image_url || '/placeholder.svg',
         },
         team2: {
-          name: match.opponents[1]?.opponent.name || 'TBD',
-          logo: match.opponents[1]?.opponent.image_url || '/placeholder.svg',
+          name: match.opponents.length > 1 ? match.opponents[1]?.opponent.name || 'TBD' : 'TBD',
+          logo: match.opponents.length > 1 ? match.opponents[1]?.opponent.image_url || '/placeholder.svg' : '/placeholder.svg',
         },
         time: new Date(match.begin_at).toLocaleTimeString('en-US', {
           hour: '2-digit',

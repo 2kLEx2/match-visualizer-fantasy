@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     // Get current date and tomorrow's date
     const now = new Date()
     const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setDate(tomorrow.getDate() + 2) // Fetch matches for next 48 hours instead of 24
     tomorrow.setHours(23, 59, 59, 999)
 
     // Format dates for PandaScore API
@@ -62,12 +62,14 @@ Deno.serve(async (req) => {
       throw new Error('PANDASCORE_API_KEY is not set')
     }
 
-    // Construct the URL with proper date range parameters
+    // Construct the URL with proper date range parameters and remove status filter to get more matches
     const url = new URL('https://api.pandascore.co/csgo/matches/upcoming')
     url.searchParams.append('range[begin_at]', `${fromDate},${toDate}`)
     url.searchParams.append('sort', 'begin_at')
     url.searchParams.append('per_page', '100') // Increased to get more matches
-    url.searchParams.append('filter[status]', 'not_started')
+    // Removed the status filter to get all upcoming matches regardless of status
+
+    console.log(`Fetching from URL: ${url.toString()}`)
 
     // Fetch upcoming CS:GO matches
     const response = await fetch(
@@ -75,6 +77,7 @@ Deno.serve(async (req) => {
       {
         headers: {
           'Authorization': `Bearer ${PANDASCORE_API_KEY}`,
+          'Content-Type': 'application/json'
         },
       }
     )
@@ -90,7 +93,7 @@ Deno.serve(async (req) => {
 
     // Additional logging to debug match data
     matches.forEach(match => {
-      console.log(`Match ID: ${match.id}, Name: ${match.name}, Teams: ${
+      console.log(`Match ID: ${match.id}, Name: ${match.name}, League: ${match.league?.name || 'Unknown'}, Teams: ${
         match.opponents?.map(o => o.opponent?.name || 'unknown').join(' vs ') || 'No opponents'
       }`)
     })
@@ -98,28 +101,31 @@ Deno.serve(async (req) => {
     // Transform matches with better filtering
     const relevantMatches = matches
       .filter(match => {
-        const hasOpponents = match.opponents && 
-          match.opponents.length >= 2 &&
-          match.opponents[0]?.opponent &&
-          match.opponents[1]?.opponent
+        // We'll accept matches with at least one opponent, and we'll mark 'TBD' for missing opponents
+        const hasAtLeastOneOpponent = match.opponents && match.opponents.length > 0 && match.opponents[0]?.opponent;
         
-        if (!hasOpponents) {
-          console.log(`Skipping match ${match.id} due to missing opponents`)
+        if (!hasAtLeastOneOpponent) {
+          console.log(`Skipping match ${match.id} due to missing opponents`);
         }
-        return hasOpponents
+        return hasAtLeastOneOpponent;
       })
       .map(match => ({
         id: match.id.toString(),
         start_time: match.begin_at,
         team1_name: match.opponents[0]?.opponent.name || 'TBD',
         team1_logo: match.opponents[0]?.opponent.image_url || '/placeholder.svg',
-        team2_name: match.opponents[1]?.opponent.name || 'TBD',
-        team2_logo: match.opponents[1]?.opponent.image_url || '/placeholder.svg',
+        team2_name: match.opponents.length > 1 ? match.opponents[1]?.opponent.name || 'TBD' : 'TBD',
+        team2_logo: match.opponents.length > 1 ? match.opponents[1]?.opponent.image_url || '/placeholder.svg' : '/placeholder.svg',
         tournament: match.league.name,
         tournament_logo: match.league.image_url || '/placeholder.svg'
-      }))
+      }));
 
     console.log(`Processing ${relevantMatches.length} relevant matches`)
+
+    // Log each match being processed
+    relevantMatches.forEach(match => {
+      console.log(`Processing match: ${match.team1_name} vs ${match.team2_name} (${match.tournament})`)
+    });
 
     // Clean up old matches first
     const { error: deleteError } = await supabase
