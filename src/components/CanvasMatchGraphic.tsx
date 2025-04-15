@@ -33,7 +33,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       console.error('Failed to load background image');
     };
     
-    img.src = 'https://images.unsplash.com/photo-1433086966358-54859d0ed716';
+    img.src = '/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
   }, []);
 
   // Pre-load all team logos
@@ -311,8 +311,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
       width={width} 
       height={height}
       style={{
-        width: `${width}px`,
-        height: `${height}px`,
+        maxWidth: '100%',
+        height: 'auto',
         transform: `scale(${settings.scale / 100})`,
         transformOrigin: 'top left',
         borderRadius: '12px',
