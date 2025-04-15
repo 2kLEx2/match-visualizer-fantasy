@@ -31,31 +31,44 @@ export const downloadGraphic = async (
   onError: (error: Error) => void
 ) => {
   try {
+    console.log('Starting graphic download process');
+    
+    // Preload all images first
     await preloadImages(matches);
+    console.log('Images preloaded');
+    
+    // Give a moment for any rendering to complete
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     let canvas: HTMLCanvasElement;
     
     if (graphicRef instanceof HTMLCanvasElement) {
+      console.log('Using canvas directly');
       // If it's already a canvas, use it directly
       canvas = graphicRef;
     } else {
+      console.log('Using html2canvas to capture DOM element');
       // If it's a DOM element, use html2canvas
       canvas = await html2canvas(graphicRef, {
         backgroundColor: null,
         scale: 2,
-        logging: false,
+        logging: true, // Enable detailed logging
         width: 600,
         height: graphicRef.offsetHeight,
         windowWidth: 600,
         useCORS: true,
         allowTaint: true,
         onclone: (clonedDoc) => {
+          console.log('html2canvas cloning document');
+          
+          // Force CORS on all images
           const images = clonedDoc.getElementsByTagName('img');
           for (let img of images) {
             img.crossOrigin = "anonymous";
+            console.log(`Setting crossOrigin for image: ${img.src}`);
           }
           
+          // Ensure graphic containers have proper scaling
           const graphics = clonedDoc.querySelectorAll('[data-graphic="true"]');
           graphics.forEach(graphic => {
             graphic.setAttribute('style', 'width: 600px; transform: scale(1); transform-origin: top left;');
@@ -64,8 +77,12 @@ export const downloadGraphic = async (
       });
     }
 
+    console.log('Canvas created, converting to data URL');
+    
     // Convert canvas to base64 PNG
     const base64Image = canvas.toDataURL('image/png');
+    
+    console.log('Canvas converted to data URL, calling render-graphic function');
 
     // Call the render-graphic function with the base64 image
     const { data, error } = await supabase.functions.invoke('render-graphic', {
@@ -81,8 +98,17 @@ export const downloadGraphic = async (
       }
     });
 
-    if (error) throw error;
-    if (!data?.image) throw new Error('No image data received');
+    if (error) {
+      console.error('Supabase function error:', error);
+      throw error;
+    }
+    
+    if (!data?.image) {
+      console.error('No image data received from render-graphic function');
+      throw new Error('No image data received');
+    }
+    
+    console.log('Image data received from render-graphic function');
 
     // Create blob from base64 data
     const response = await fetch(`data:image/png;base64,${data.image}`);
@@ -99,6 +125,7 @@ export const downloadGraphic = async (
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
+    console.log('Download completed successfully');
     onSuccess();
     return true;
   } catch (error) {

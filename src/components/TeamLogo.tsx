@@ -25,7 +25,7 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
   // Loading state
   if (isLoading) {
     return (
-      <Avatar className="w-[24px] h-[24px]">
+      <Avatar className="w-[24px] h-[24px] flex items-center justify-center">
         <AvatarFallback>
           <Shield className="w-5 h-5 text-gray-400 animate-pulse" />
         </AvatarFallback>
@@ -36,7 +36,7 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
   // Handle case where we have no logo or logo already failed to load
   if (!safeLogo || hasError) {
     return (
-      <Avatar className="w-[24px] h-[24px]">
+      <Avatar className="w-[24px] h-[24px] flex items-center justify-center">
         <AvatarImage
           src={fallbackImage}
           alt={`${teamName} logo fallback`}
@@ -50,7 +50,7 @@ export const TeamLogo = memo(({ logo, teamName, isLoading, isLoaded }: TeamLogoP
   }
 
   return (
-    <Avatar className="w-[24px] h-[24px]">
+    <Avatar className="w-[24px] h-[24px] flex items-center justify-center">
       {isLoaded ? (
         <AvatarImage
           src={safeLogo}

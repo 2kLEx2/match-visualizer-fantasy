@@ -29,9 +29,9 @@ export const MatchRow = memo(({
           isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
         }`}
       >
-        <div className="px-3 py-2 flex items-center">
+        <div className="px-3 py-2 flex items-center h-[60px]">
           {showTime && (
-            <div className="text-base font-medium text-gray-400 w-[70px]">
+            <div className="text-base font-medium text-gray-400 w-[70px] flex items-center">
               {match.time}
             </div>
           )}
