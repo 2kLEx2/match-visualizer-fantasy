@@ -25,35 +25,35 @@ export const drawMatch = ({
   settings,
   logoCache
 }: DrawMatchOptions) => {
-  const rowHeight = 70;
-  const verticalGap = 16;
+  const rowHeight = 72; // smaller height for compact layout
+  const verticalGap = 20; // spacing between matchboxes
   const padding = 48;
   const logoSize = 49;
-  const logoTextGap = 20;
-  const teamTextGap = 12;
+  const logoTextGap = 16;
 
+  const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
+
+  // Draw background box
   drawRoundedRect(
     ctx,
     padding,
     y + verticalGap / 2,
-    width - padding,
+    width - padding * 2,
     rowHeight,
     16,
     isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)'
   );
 
-  const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
-
-  // Time
+  // Time text
   if (settings.showTime) {
     ctx.font = 'bold 44px Inter';
     ctx.fillStyle = '#9CA3AF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(match.time, padding + 32, verticalCenter);
+    ctx.fillText(match.time, padding + 16, verticalCenter);
   }
 
-  const timeWidth = settings.showTime ? 180 : 0;
+  const timeBlockWidth = settings.showTime ? 180 : 0;
   const centerX = width / 2;
 
   if ('isCustomEntry' in match && match.isCustomEntry) {
@@ -62,81 +62,79 @@ export const drawMatch = ({
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
-  } else {
-    // Team name max width
-    const maxTeamNameWidth = 300;
-
-    const vsGap = 80;
-    const team1TextX = centerX - vsGap;
-    const team2TextX = centerX + vsGap;
-
-    // Team 1
-    ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-    ctx.font = 'bold 32px Inter';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-
-    if (settings.showLogos && match.team1.logo) {
-      drawTeamLogo(
-        ctx,
-        match.team1.logo,
-        team1TextX - logoSize - logoTextGap,
-        verticalCenter - logoSize / 2,
-        logoSize,
-        logoCache,
-        true
-      );
-    }
-
-    const team1Name = truncateText(ctx, match.team1.name, maxTeamNameWidth);
-    ctx.fillText(team1Name, team1TextX, verticalCenter);
-
-    // VS
-    ctx.fillStyle = '#6B7280';
-    ctx.font = '20px Inter';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('vs', centerX, verticalCenter);
-
-    // Team 2
-    ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-    ctx.font = 'bold 32px Inter';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    if (settings.showLogos && match.team2.logo) {
-      drawTeamLogo(
-        ctx,
-        match.team2.logo,
-        team2TextX + logoTextGap,
-        verticalCenter - logoSize / 2,
-        logoSize,
-        logoCache,
-        true
-      );
-    }
-
-    const team2Name = truncateText(ctx, match.team2.name, maxTeamNameWidth);
-    ctx.fillText(team2Name, team2TextX + (settings.showLogos ? logoSize + logoTextGap : 0), verticalCenter);
-
-    // Tournament
-    if (match.tournament) {
-      ctx.fillStyle = '#6B7280';
-      ctx.font = '16px Inter';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      const tournamentX = width - padding - 32;
-      ctx.fillText(match.tournament, tournamentX, verticalCenter);
-    }
+    return;
   }
 
-  // BIG footer note
+  // Layout spacing
+  const maxTextWidth = 300;
+  const vsText = 'vs';
+  const vsFontSize = 20;
+
+  // --- TEAM 1
+  const team1NameX = centerX - 60;
+  const team1LogoX = team1NameX - logoTextGap - logoSize;
+
+  if (settings.showLogos && match.team1.logo) {
+    drawTeamLogo(
+      ctx,
+      match.team1.logo,
+      team1LogoX,
+      verticalCenter - logoSize / 2,
+      logoSize,
+      logoCache,
+      true
+    );
+  }
+
+  ctx.font = 'bold 32px Inter';
+  ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const team1Name = truncateText(ctx, match.team1.name, maxTextWidth);
+  ctx.fillText(team1Name, team1NameX, verticalCenter);
+
+  // --- VS Text
+  ctx.font = `${vsFontSize}px Inter`;
+  ctx.fillStyle = '#6B7280';
+  ctx.textAlign = 'center';
+  ctx.fillText(vsText, centerX, verticalCenter);
+
+  // --- TEAM 2
+  const team2LogoX = centerX + 60 + logoTextGap;
+  const team2NameX = team2LogoX + logoSize + logoTextGap;
+
+  if (settings.showLogos && match.team2.logo) {
+    drawTeamLogo(
+      ctx,
+      match.team2.logo,
+      team2LogoX,
+      verticalCenter - logoSize / 2,
+      logoSize,
+      logoCache,
+      true
+    );
+  }
+
+  ctx.font = 'bold 32px Inter';
+  ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
+  ctx.textAlign = 'left';
+  const team2Name = truncateText(ctx, match.team2.name, maxTextWidth);
+  ctx.fillText(team2Name, team2NameX, verticalCenter);
+
+  // --- Tournament Name
+  if (match.tournament) {
+    ctx.font = '16px Inter';
+    ctx.fillStyle = '#6B7280';
+    ctx.textAlign = 'right';
+    ctx.fillText(match.tournament, width - padding - 16, verticalCenter);
+  }
+
+  // --- BIG Special Label
   if (isBIG && !('isCustomEntry' in match)) {
     ctx.fillStyle = '#10A37F';
     ctx.font = 'italic 24px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('Anwesenheitspflicht', timeWidth + padding, y + rowHeight + verticalGap / 2 + 8);
+    ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, y + verticalGap / 2 + rowHeight + 6);
   }
 };
-
