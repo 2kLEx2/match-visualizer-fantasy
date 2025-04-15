@@ -139,16 +139,12 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     url: string | undefined,
     x: number,
     y: number,
-    size: number = 48
+    size: number = 80
   ) => {
     if (!url || !settings.showLogos) return;
     
     const logoImg = logoCache[url];
     if (!logoImg) {
-      ctx.fillStyle = '#4A5568';
-      ctx.beginPath();
-      ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
-      ctx.fill();
       return;
     }
     
@@ -167,7 +163,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     y: number,
     isBIG: boolean
   ) => {
-    const rowHeight = 140;
+    const rowHeight = 160;
     const padding = 48;
     
     ctx.fillStyle = isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)';
@@ -192,36 +188,35 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
     const verticalCenter = y + (rowHeight / 2);
     
     if (settings.showTime) {
-      ctx.font = 'bold 32px Inter';
+      ctx.font = 'bold 36px Inter';
       ctx.fillStyle = '#9CA3AF';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.time, padding + 32, verticalCenter);
     }
 
-    const timeWidth = settings.showTime ? 180 : 0;
-    const teamSection = width - timeWidth - (padding * 4);
-    const centerX = padding + timeWidth + (teamSection / 2);
+    const timeWidth = settings.showTime ? 200 : 0;
+    const centerX = width / 2;
+    const vsX = centerX;
 
     if ('isCustomEntry' in match && match.isCustomEntry) {
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-      ctx.font = 'bold 32px Inter';
+      ctx.font = 'bold 36px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
     } else {
-      const maxTeamNameWidth = 500;
-      const team1X = centerX - 280;
-      const team2X = centerX + 60;
-      const vsX = centerX - 80;
+      const maxTeamNameWidth = 600;
+      const team1X = centerX - 100;
+      const team2X = centerX + 100;
 
       if (settings.showLogos) {
-        drawLogo(ctx, match.team1.logo, team1X - 100, verticalCenter - 32, 64);
+        drawLogo(ctx, match.team1.logo, team1X - 280, verticalCenter - 40, 80);
       }
       
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-      ctx.font = 'bold 32px Inter';
-      ctx.textAlign = 'left';
+      ctx.font = 'bold 36px Inter';
+      ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       
       let team1Name = match.team1.name;
@@ -240,27 +235,27 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
         team2Name = team2Name.slice(0, -1) + '...';
       }
       
-      ctx.fillText(team1Name, team1X, verticalCenter);
+      ctx.fillText(team1Name, team1X - 100, verticalCenter);
 
       ctx.fillStyle = '#6B7280';
-      ctx.font = '28px Inter';
+      ctx.font = '32px Inter';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('vs', vsX, verticalCenter);
 
       if (settings.showLogos) {
-        drawLogo(ctx, match.team2.logo, team2X - 100, verticalCenter - 32, 64);
+        drawLogo(ctx, match.team2.logo, team2X + 20, verticalCenter - 40, 80);
       }
       
       ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-      ctx.font = 'bold 32px Inter';
+      ctx.font = 'bold 36px Inter';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(team2Name, team2X, verticalCenter);
+      ctx.fillText(team2Name, team2X + 120, verticalCenter);
 
       if (match.tournament) {
         ctx.fillStyle = '#6B7280';
-        ctx.font = '28px Inter';
+        ctx.font = '32px Inter';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         const tournamentX = width - padding - 32;
