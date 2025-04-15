@@ -9,6 +9,7 @@ import { Download, Monitor } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { downloadGraphic } from '@/utils/graphicDownloader';
+import { Input } from '@/components/ui/input';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -32,6 +33,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
   const [useCanvas, setUseCanvas] = useState(false);
+  const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
 
   const handleDownload = async () => {
     if (selectedMatches.length === 0 && customEntries.length === 0) {
@@ -156,16 +158,30 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
         <div className="space-y-6">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setUseCanvas(!useCanvas)}
-              className="flex items-center gap-2"
-            >
-              <Monitor className="w-4 h-4" />
-              {useCanvas ? 'Switch to DOM' : 'Switch to Canvas'}
-            </Button>
+          <div className="flex flex-col space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium text-gray-200">
+                Graphic Title
+              </label>
+              <Input
+                id="title"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Enter custom title"
+                className="bg-white/5 border-0 text-white placeholder:text-gray-400"
+              />
+            </div>
+            <div className="flex justify-end mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUseCanvas(!useCanvas)}
+                className="flex items-center gap-2"
+              >
+                <Monitor className="w-4 h-4" />
+                {useCanvas ? 'Switch to DOM' : 'Switch to Canvas'}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -202,6 +218,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
                 backgroundColor: '#1a1b1e',
                 textColor: '#FFFFFF',
                 scale: graphicScale,
+                title: customTitle,
               }}
             />
           ) : (
@@ -213,6 +230,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
                 backgroundColor: '#1a1b1e',
                 textColor: '#FFFFFF',
                 scale: graphicScale,
+                title: customTitle,
               }}
             />
           )}

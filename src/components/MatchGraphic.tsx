@@ -13,6 +13,7 @@ interface MatchGraphicProps {
     backgroundColor: string;
     textColor: string;
     scale: number;
+    title: string;
   };
 }
 
@@ -90,7 +91,7 @@ export const MatchGraphic = memo(({ matches, settings }: MatchGraphicProps) => {
         }}
       >
         <h1 className="text-2xl font-bold text-white mb-6 text-right pr-4">
-          Watchparty Schedule
+          {settings.title}
         </h1>
 
         <div className="space-y-4">
