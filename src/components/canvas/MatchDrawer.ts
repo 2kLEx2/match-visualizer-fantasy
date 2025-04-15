@@ -66,13 +66,13 @@ export const drawMatch = ({
   }
 
   // Layout spacing
-  const maxTextWidth = 300;
+  const maxTextWidth = 300;  // Keep only ONE declaration
   const vsText = 'vs';
   const vsFontSize = 20;
 
   // --- TEAM 1
-const team1LogoX = centerX - logoSize - logoTextGap - 60;
-const team1NameX = team1LogoX - logoTextGap;
+  const team1LogoX = centerX - logoSize - logoTextGap - 60;
+  const team1NameX = team1LogoX - logoTextGap;
 
   if (settings.showLogos && match.team1.logo) {
     drawTeamLogo(
@@ -122,7 +122,6 @@ const team1NameX = team1LogoX - logoTextGap;
   ctx.fillText(team2Name, team2NameX, verticalCenter);
 
   // --- Tournament Name
-  const maxTextWidth = 300;
   if (match.tournament) {
     ctx.font = '16px Inter';
     ctx.fillStyle = '#6B7280';
