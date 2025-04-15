@@ -1,8 +1,15 @@
+
 import { supabase } from '@/lib/supabase/client';
 
 interface ImageLoadResult {
   loaded: boolean;
   loading: boolean;
+}
+
+// Initialize global cache for data URLs if it doesn't exist
+if (typeof window !== 'undefined' && !window.dataUrlCache) {
+  console.log('Initializing global dataUrlCache');
+  window.dataUrlCache = new Map<string, string>();
 }
 
 /**
@@ -91,8 +98,13 @@ export const loadImage = async (url: string): Promise<boolean> => {
  */
 const loadViaProxy = async (thumbnailUrl: string, originalUrl: string, resolve: (value: boolean) => void) => {
   try {
+    // Ensure dataUrlCache exists
+    if (typeof window !== 'undefined' && !window.dataUrlCache) {
+      window.dataUrlCache = new Map<string, string>();
+    }
+    
     // Check if we already have a proxied data URL for this image in the global cache
-    if (window.dataUrlCache.has(originalUrl)) {
+    if (window.dataUrlCache && window.dataUrlCache.has(originalUrl)) {
       const cachedDataUrl = window.dataUrlCache.get(originalUrl);
       if (cachedDataUrl) {
         console.log('Using cached data URL for:', originalUrl);
@@ -124,9 +136,13 @@ const loadViaProxy = async (thumbnailUrl: string, originalUrl: string, resolve: 
     }
 
     // Store in the global cache using the original URL as the key
-    window.dataUrlCache.set(originalUrl, data.imageData);
-    console.log('Successfully received data URL from proxy for:', thumbnailUrl);
-    console.log('Cached with key:', originalUrl);
+    if (window.dataUrlCache) {
+      window.dataUrlCache.set(originalUrl, data.imageData);
+      console.log('Successfully received data URL from proxy for:', thumbnailUrl);
+      console.log('Cached with key:', originalUrl);
+    } else {
+      console.error('dataUrlCache is not available');
+    }
 
     // Create an image element and load the data URL
     const proxyImg = new Image();

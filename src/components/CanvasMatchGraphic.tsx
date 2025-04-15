@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { useCanvasImages } from '@/hooks/useCanvasImages';
 import { drawMatch } from './canvas/MatchDrawer';
 
+// Ensure dataUrlCache exists globally
+if (typeof window !== 'undefined' && !window.dataUrlCache) {
+  console.log('Initializing global dataUrlCache from CanvasMatchGraphic');
+  window.dataUrlCache = new Map<string, string>();
+}
+
 interface CanvasMatchGraphicProps {
   matches: Match[];
   settings: {
@@ -41,12 +47,13 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
 
     const padding = 32;
 
+    // Calculate total height based on matches
     const totalHeight = matches.reduce((acc, match) => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
-      return acc + (isBIG ? 180 : 140);
+      return acc + (isBIG ? 140 : 120) + (isBIG ? 20 : 0); // Add padding between rows
     }, 160);
 
-    canvas.height = totalHeight;
+    canvas.height = totalHeight + padding; // Add extra padding at the bottom
     canvas.width = width;
 
     ctx.clearRect(0, 0, width, canvas.height);
@@ -92,7 +99,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1920, height = 1
         settings,
         logoCache
       });
-      currentY += isBIG ? 180 : 140;
+      currentY += isBIG ? 140 : 120;
     });
   };
 
