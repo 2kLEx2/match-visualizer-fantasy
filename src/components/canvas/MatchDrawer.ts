@@ -71,8 +71,8 @@ export const drawMatch = ({
   const vsFontSize = 20;
 
   // --- TEAM 1
-  const team1NameX = centerX - 60;
-  const team1LogoX = team1NameX - logoTextGap - logoSize;
+const team1LogoX = centerX - logoSize - logoTextGap - 60;
+const team1NameX = team1LogoX - logoTextGap;
 
   if (settings.showLogos && match.team1.logo) {
     drawTeamLogo(
