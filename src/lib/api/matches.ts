@@ -36,82 +36,20 @@ export async function getUpcomingMatchesFromSupabase(): Promise<Match[]> {
 // Fetch matches directly from PandaScore API
 export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
   try {
-    // Get the PandaScore API key from environment variables or config
-    const apiKey = import.meta.env.VITE_PANDASCORE_API_KEY;
+    // Invoke the Supabase Edge Function to fetch matches instead of direct API call
+    // This avoids exposing the API key in client-side code
+    console.log('Attempting to fetch matches through Supabase function');
     
-    if (!apiKey) {
-      console.error('PANDASCORE_API_KEY is not set. Using database matches instead.');
+    const { data, error } = await supabase.functions.invoke('sync-matches');
+    
+    if (error) {
+      console.error('Error invoking sync-matches function:', error);
       return [];
     }
-
-    // Current date and future date for filtering
-    const now = new Date();
-    const future = new Date(now);
-    future.setDate(future.getDate() + 2); // Get next 48 hours
-    future.setHours(23, 59, 59, 999);
-
-    // Format dates for PandaScore API
-    const fromDate = now.toISOString().split('.')[0] + 'Z';
-    const toDate = future.toISOString().split('.')[0] + 'Z';
     
-    // Construct URL with parameters
-    const url = new URL('https://api.pandascore.co/csgo/matches/upcoming');
-    url.searchParams.append('range[begin_at]', `${fromDate},${toDate}`);
-    url.searchParams.append('sort', 'begin_at');
-    url.searchParams.append('per_page', '100'); // Increased for more matches
-    // Remove status filter to get all upcoming matches
-
-    console.log(`Fetching matches from PandaScore API: ${url.toString()}`);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store', // Ensure fresh data on each call
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`PandaScore API error: ${response.status}`, errorText);
-      throw new Error(`PandaScore API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`Found ${data.length} upcoming matches from API`);
-
-    // Transform API data to match our interface with more lenient filtering
-    return data
-      .filter((match: any) => {
-        // Accept matches with at least one opponent
-        const hasAtLeastOneOpponent = match.opponents && 
-          match.opponents.length > 0 && 
-          match.opponents[0]?.opponent;
-        
-        if (!hasAtLeastOneOpponent) {
-          console.log(`Skipping match ${match.id} due to missing opponents`);
-        }
-        return hasAtLeastOneOpponent;
-      })
-      .map((match: any) => ({
-        id: match.id.toString(),
-        team1: {
-          name: match.opponents[0]?.opponent.name || 'TBD',
-          logo: match.opponents[0]?.opponent.image_url || '/placeholder.svg',
-        },
-        team2: {
-          name: match.opponents.length > 1 ? match.opponents[1]?.opponent.name || 'TBD' : 'TBD',
-          logo: match.opponents.length > 1 ? match.opponents[1]?.opponent.image_url || '/placeholder.svg' : '/placeholder.svg',
-        },
-        time: new Date(match.begin_at).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          timeZone: 'Europe/Paris',
-          hour12: false
-        }),
-        tournament: match.league.name,
-        tournament_logo: match.league.image_url || '/placeholder.svg'
-      }));
+    // After syncing matches via the function, fetch the updated matches from the database
+    console.log('Successfully synced matches, fetching from database');
+    return getUpcomingMatchesFromSupabase();
 
   } catch (error) {
     console.error('Error fetching matches from API:', error);
@@ -121,17 +59,8 @@ export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
 
 // Main function to get upcoming matches with fallback strategy
 export async function getUpcomingMatches(): Promise<Match[]> {
-  // Try to fetch from API first for most up-to-date data
-  const apiMatches = await getUpcomingMatchesFromAPI();
-  
-  // If API fetch successful, return those matches
-  if (apiMatches.length > 0) {
-    console.log('Using matches from direct API fetch');
-    return apiMatches;
-  }
-  
-  // Fallback to database if API fails or returns no matches
-  console.log('API fetch returned no matches, falling back to database');
+  // Just fetch directly from the database since our sync function handles the API call
+  console.log('Fetching matches from database');
   return getUpcomingMatchesFromSupabase();
 }
 

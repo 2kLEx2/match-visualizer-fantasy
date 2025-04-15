@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
 import { GraphicCustomizer } from '@/components/GraphicCustomizer';
 import { Badge } from '@/components/ui/badge';
-import { getUpcomingMatches, subscribeToMatches, Match } from '@/lib/api/matches';
+import { getUpcomingMatches, subscribeToMatches, getUpcomingMatchesFromSupabase, Match } from '@/lib/api/matches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, RefreshCcw } from 'lucide-react';
@@ -19,7 +19,7 @@ const Index = () => {
 
   const { data: matches, isLoading, error, refetch } = useQuery({
     queryKey: ['matches'],
-    queryFn: getUpcomingMatches,
+    queryFn: getUpcomingMatchesFromSupabase, // Changed to directly use database fetch
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
@@ -118,7 +118,7 @@ const Index = () => {
                     Refresh
                   </Button>
                   <Badge variant="outline" className="bg-primary/10 text-primary">
-                    Next 24 Hours
+                    Next 48 Hours
                   </Badge>
                 </div>
               </div>
@@ -139,7 +139,7 @@ const Index = () => {
                 />
               ) : (
                 <div className="text-gray-400 text-center py-8">
-                  No upcoming matches in the next 24 hours
+                  No upcoming matches in the next 48 hours
                 </div>
               )}
             </div>
