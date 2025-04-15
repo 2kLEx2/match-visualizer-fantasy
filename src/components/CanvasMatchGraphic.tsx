@@ -1,6 +1,7 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Match } from '@/lib/api/matches';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, RefreshCw } from 'lucide-react';
 import { loadImage } from '@/lib/utils/imageLoader';
 import { Button } from '@/components/ui/button';
 
@@ -24,57 +25,50 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [bgLoading, setBgLoading] = useState(true);
   const [bgError, setBgError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
+  // Background image loading
   useEffect(() => {
     const bgImageUrl = 'https://b3b5f642-e8a5-4f27-806f-b4259c301002.lovableproject.com/lovable-uploads/bd7c1326-c691-4d02-ade8-98cd4f37e6c4.png';
     setBgLoading(true);
     setBgError(false);
     
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    
-    img.onload = () => {
-      console.log('Background image loaded successfully');
-      setBgImage(img);
-      setBgLoading(false);
-    };
-    
-    img.onerror = async () => {
-      console.log('Direct loading failed, trying proxy loading for background');
-      
+    const loadBackgroundImage = async () => {
       try {
+        // Use our improved loadImage utility
         const success = await loadImage(bgImageUrl);
         
         if (success) {
-          console.log('Background loaded via proxy successfully');
-          const proxyImg = new Image();
-          proxyImg.crossOrigin = "anonymous";
-          proxyImg.onload = () => {
-            console.log('Background image loaded via proxy');
-            setBgImage(proxyImg);
+          console.log('Background loaded successfully');
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            console.log('Background image ready for canvas');
+            setBgImage(img);
             setBgLoading(false);
           };
-          proxyImg.onerror = () => {
-            console.error('Failed to load background image even after proxy');
+          img.onerror = () => {
+            console.error('Failed to prepare background for canvas');
             setBgLoading(false);
             setBgError(true);
           };
-          proxyImg.src = bgImageUrl;
+          img.src = bgImageUrl;
         } else {
-          console.error('Failed to load background image through proxy');
+          console.error('Failed to load background image');
           setBgLoading(false);
           setBgError(true);
         }
       } catch (error) {
-        console.error('Error loading background image:', error);
+        console.error('Error in background loading process:', error);
         setBgLoading(false);
         setBgError(true);
       }
     };
     
-    img.src = bgImageUrl;
-  }, []);
+    loadBackgroundImage();
+  }, [retryCount]); // Depend on retryCount to allow manual refreshing
 
+  // Team logos loading
   useEffect(() => {
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
@@ -93,49 +87,51 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     teamLogos.forEach(async (url) => {
       if (!url) {
         loadedCount++;
-        if (loadedCount === totalLogos) {
-          setLogoCache(logoElements);
-          setImagesLoaded(true);
-        }
+        checkIfComplete();
         return;
       }
       
       try {
+        // Use our improved loadImage utility
         const success = await loadImage(url);
         
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        
-        img.onload = () => {
-          logoElements[url] = img;
+        if (success) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          img.onload = () => {
+            logoElements[url] = img;
+            loadedCount++;
+            checkIfComplete();
+          };
+          
+          img.onerror = () => {
+            console.log(`Failed to load logo: ${url}`);
+            loadedCount++;
+            checkIfComplete();
+          };
+          
+          img.src = url;
+        } else {
+          console.log(`Failed to load logo via proxy: ${url}`);
           loadedCount++;
-          if (loadedCount === totalLogos) {
-            console.log('All logos loaded successfully');
-            setLogoCache(logoElements);
-            setImagesLoaded(true);
-          }
-        };
-        
-        img.onerror = () => {
-          console.log(`Failed to load logo: ${url}`);
-          loadedCount++;
-          if (loadedCount === totalLogos) {
-            setLogoCache(logoElements);
-            setImagesLoaded(true);
-          }
-        };
-        
-        img.src = url;
+          checkIfComplete();
+        }
       } catch (error) {
         console.error(`Error loading logo ${url}:`, error);
         loadedCount++;
-        if (loadedCount === totalLogos) {
-          setLogoCache(logoElements);
-          setImagesLoaded(true);
-        }
+        checkIfComplete();
       }
     });
-  }, [matches]);
+    
+    function checkIfComplete() {
+      if (loadedCount === totalLogos) {
+        console.log('All logos processed');
+        setLogoCache(logoElements);
+        setImagesLoaded(true);
+      }
+    }
+  }, [matches, retryCount]); // Depend on retryCount to allow manual refreshing
 
   const drawLogo = (
     ctx: CanvasRenderingContext2D,
@@ -335,6 +331,13 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage]);
 
+  const handleRetryLoading = () => {
+    setBgLoading(true);
+    setBgError(false);
+    setImagesLoaded(false);
+    setRetryCount(prev => prev + 1);
+  };
+
   const renderFallback = () => {
     if (bgLoading) {
       return (
@@ -359,8 +362,9 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 600, height = 40
               variant="outline" 
               size="sm" 
               className="mt-2"
-              onClick={() => window.location.reload()}
+              onClick={handleRetryLoading}
             >
+              <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </Button>
           </div>

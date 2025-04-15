@@ -26,9 +26,10 @@ const convertToThumbnail = (url: string): string => {
   }
 };
 
-// Keep track of images we've already tried to load to prevent duplicate requests
+// Global caches for image loading status
 const loadingCache = new Map<string, Promise<boolean>>();
 const loadedImages = new Map<string, boolean>();
+const dataUrlCache = new Map<string, string>();
 
 /**
  * Loads an image via the Supabase proxy to handle CORS issues.
@@ -58,21 +59,15 @@ export const loadImage = async (url: string): Promise<boolean> => {
     // Create a promise for this loading operation
     const loadPromise = new Promise<boolean>(async (resolve) => {
       try {
-        // Try loading directly first as an optimization
-        const img = new Image();
-        img.crossOrigin = "anonymous";
+        // Skip direct loading attempt and go straight to proxy
+        // for external CDN images since we know they'll have CORS issues
+        if (url.includes('pandascore.co') || url.includes('cdn.')) {
+          await loadViaProxy(thumbnailUrl, resolve);
+          return;
+        }
         
-        const directLoadPromise = new Promise<boolean>((resolveImg) => {
-          img.onload = () => resolveImg(true);
-          img.onerror = () => resolveImg(false);
-          img.src = thumbnailUrl;
-        });
-        
-        // Set a timeout for direct loading
-        const directLoadResult = await Promise.race([
-          directLoadPromise,
-          new Promise<boolean>(r => setTimeout(() => r(false), 2000))
-        ]);
+        // Try loading directly first as an optimization for same-origin images
+        const directLoadResult = await loadDirectly(thumbnailUrl);
         
         if (directLoadResult) {
           console.log('Successfully loaded image directly:', thumbnailUrl);
@@ -83,39 +78,7 @@ export const loadImage = async (url: string): Promise<boolean> => {
         
         // Direct loading failed, try proxy loading
         console.log('Direct image loading failed, trying proxy:', thumbnailUrl);
-        
-        // Fetch image through the Supabase proxy function
-        const { data, error } = await supabase.functions.invoke('proxy-image', {
-          body: { url: thumbnailUrl }
-        });
-
-        if (error) {
-          console.error('Proxy request failed:', error);
-          loadedImages.set(url, false);
-          resolve(false);
-          return;
-        }
-
-        if (!data || !data.success || !data.imageData) {
-          console.error('Invalid response from proxy:', data);
-          loadedImages.set(url, false);
-          resolve(false);
-          return;
-        }
-
-        // Create an image element and load the data URL
-        const proxyImg = new Image();
-        proxyImg.onload = () => {
-          console.log('Successfully loaded image via proxy');
-          loadedImages.set(url, true);
-          resolve(true);
-        };
-        proxyImg.onerror = (e) => {
-          console.error('Failed to load image after proxy:', e);
-          loadedImages.set(url, false);
-          resolve(false);
-        };
-        proxyImg.src = data.imageData;
+        await loadViaProxy(thumbnailUrl, resolve);
       } catch (error) {
         console.error('Image loading error:', error);
         loadedImages.set(url, false);
@@ -136,6 +99,98 @@ export const loadImage = async (url: string): Promise<boolean> => {
     console.error('Image loading error:', fetchError);
     loadedImages.set(url, false);
     return false;
+  }
+};
+
+/**
+ * Helper function to load an image directly from URL
+ */
+const loadDirectly = (url: string): Promise<boolean> => {
+  return new Promise<boolean>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    const timeoutId = setTimeout(() => {
+      console.log('Direct image loading timed out:', url);
+      resolve(false);
+    }, 3000);
+    
+    img.onload = () => {
+      clearTimeout(timeoutId);
+      resolve(true);
+    };
+    
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      resolve(false);
+    };
+    
+    img.src = url;
+  });
+};
+
+/**
+ * Helper function to load an image via the proxy
+ */
+const loadViaProxy = async (url: string, resolve: (value: boolean) => void) => {
+  try {
+    // Check if we already have a proxied data URL for this image
+    if (dataUrlCache.has(url)) {
+      const cachedDataUrl = dataUrlCache.get(url);
+      if (cachedDataUrl) {
+        const proxyImg = new Image();
+        proxyImg.onload = () => {
+          loadedImages.set(url, true);
+          resolve(true);
+        };
+        proxyImg.onerror = () => {
+          loadedImages.set(url, false);
+          resolve(false);
+        };
+        proxyImg.src = cachedDataUrl;
+        return;
+      }
+    }
+    
+    // Fetch image through the Supabase proxy function
+    const { data, error } = await supabase.functions.invoke('proxy-image', {
+      body: { url }
+    });
+
+    if (error) {
+      console.error('Proxy request failed:', error);
+      loadedImages.set(url, false);
+      resolve(false);
+      return;
+    }
+
+    if (!data || !data.success || !data.imageData) {
+      console.error('Invalid response from proxy:', data);
+      loadedImages.set(url, false);
+      resolve(false);
+      return;
+    }
+
+    // Cache the data URL for future use
+    dataUrlCache.set(url, data.imageData);
+
+    // Create an image element and load the data URL
+    const proxyImg = new Image();
+    proxyImg.onload = () => {
+      console.log('Successfully loaded image via proxy');
+      loadedImages.set(url, true);
+      resolve(true);
+    };
+    proxyImg.onerror = (e) => {
+      console.error('Failed to load image after proxy:', e);
+      loadedImages.set(url, false);
+      resolve(false);
+    };
+    proxyImg.src = data.imageData;
+  } catch (error) {
+    console.error('Proxy loading error:', error);
+    loadedImages.set(url, false);
+    resolve(false);
   }
 };
 

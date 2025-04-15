@@ -28,22 +28,28 @@ serve(async (req) => {
     console.log('Proxying image request:', url);
 
     // Fetch the image from the provided URL with a proper User-Agent header
+    // and additional headers to help with CORS issues
     const imageResponse = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Origin': 'https://supabase.com',
+        'Referer': 'https://supabase.com/',
       },
     });
 
     if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
     }
 
     // Get content type
     const contentType = imageResponse.headers.get('content-type') || 'image/png';
     
-    // Convert the image to Base64
+    // Get the image as binary data
     const arrayBuffer = await imageResponse.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Create the Base64 representation
+    const base64 = btoa(String.fromCharCode(...uint8Array));
     
     // Create the Base64 data URL
     const dataUrl = `data:${contentType};base64,${base64}`;
@@ -51,13 +57,15 @@ serve(async (req) => {
     // Return the Base64 encoded image as JSON
     return new Response(JSON.stringify({ 
       imageData: dataUrl,
-      success: true 
+      success: true,
+      contentType: contentType,
+      size: uint8Array.length
     }), {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
+        'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
       }
     });
   } catch (error) {
