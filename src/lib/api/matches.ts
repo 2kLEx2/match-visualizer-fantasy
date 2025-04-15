@@ -18,6 +18,7 @@ export interface Match {
 
 // Fetch matches from Supabase database
 export async function getUpcomingMatchesFromSupabase(): Promise<Match[]> {
+  console.log('Fetching matches from Supabase database');
   const { data, error } = await supabase
     .from('matches')
     .select('*')
@@ -33,12 +34,10 @@ export async function getUpcomingMatchesFromSupabase(): Promise<Match[]> {
   return transformMatchesData(data);
 }
 
-// Fetch matches directly from PandaScore API
+// Fetch matches directly from PandaScore API via Supabase Edge Function
 export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
   try {
-    // Invoke the Supabase Edge Function to fetch matches instead of direct API call
-    // This avoids exposing the API key in client-side code
-    console.log('Attempting to fetch matches through Supabase function');
+    console.log('Attempting to sync matches through Supabase function');
     
     const { data, error } = await supabase.functions.invoke('sync-matches');
     
@@ -48,20 +47,28 @@ export async function getUpcomingMatchesFromAPI(): Promise<Match[]> {
     }
     
     // After syncing matches via the function, fetch the updated matches from the database
-    console.log('Successfully synced matches, fetching from database');
+    console.log('Successfully synced matches, now fetching from database');
     return getUpcomingMatchesFromSupabase();
 
   } catch (error) {
-    console.error('Error fetching matches from API:', error);
+    console.error('Error syncing matches from API:', error);
     return [];
   }
 }
 
-// Main function to get upcoming matches with fallback strategy
+// Main function to get upcoming matches
 export async function getUpcomingMatches(): Promise<Match[]> {
-  // Just fetch directly from the database since our sync function handles the API call
-  console.log('Fetching matches from database');
-  return getUpcomingMatchesFromSupabase();
+  // Force a refresh from the API to ensure we have the latest data
+  console.log('Getting upcoming matches with forced API refresh');
+  try {
+    // Try to get matches from API first (which will sync the database)
+    const matches = await getUpcomingMatchesFromAPI();
+    return matches;
+  } catch (error) {
+    console.error('Error in API fetch, falling back to database:', error);
+    // Fallback to database if API fails
+    return getUpcomingMatchesFromSupabase();
+  }
 }
 
 export function transformMatchesData(data: any[]): Match[] {
@@ -97,7 +104,7 @@ export function subscribeToMatches(callback: (matches: Match[]) => void) {
         table: 'matches'
       },
       async () => {
-        const matches = await getUpcomingMatches();
+        const matches = await getUpcomingMatchesFromSupabase();
         callback(matches);
       }
     )
