@@ -74,7 +74,7 @@ export const drawMatch = ({
       drawTeamLogo(
         ctx, 
         match.team1.logo, 
-        team1X - logoSize - 10,
+        team1X - logoSize - logoTextGap,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache,
@@ -83,7 +83,7 @@ export const drawMatch = ({
     }
 
     const team1Name = truncateText(ctx, match.team1.name, maxTeamNameWidth);
-    ctx.fillText(team1Name, team1X - (settings.showLogos ? logoSize + logoTextGap : 0), verticalCenter);
+    ctx.fillText(team1Name, team1X, verticalCenter);
 
     ctx.fillStyle = '#6B7280';
     ctx.font = '20px Inter';
@@ -100,7 +100,7 @@ export const drawMatch = ({
       drawTeamLogo(
         ctx, 
         match.team2.logo, 
-        team2X + 10,
+        team2X + logoTextGap,
         verticalCenter - logoSize/2, 
         logoSize, 
         logoCache,
