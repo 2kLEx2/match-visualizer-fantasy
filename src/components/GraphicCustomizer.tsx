@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download, Copy, CopyCheck } from 'lucide-react';
+import { Download, Copy, CopyCheck, X } from 'lucide-react';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
@@ -204,6 +204,14 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     setCustomMatches(prev => [...prev, match]);
   };
 
+  const handleDeleteCustomMatch = (matchId: string) => {
+    setCustomMatches(prev => prev.filter(match => match.id !== matchId));
+    toast({
+      title: "Match Deleted",
+      description: "Custom match has been removed.",
+    });
+  };
+
   const allMatches = [...selectedMatches, ...customMatches, ...customEntries.map(entry => ({
     id: entry.id,
     time: entry.time,
@@ -245,8 +253,39 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             />
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Add Custom Match</h3>
+              <h3 className="text-lg font-semibold text-white">Custom Matches</h3>
               <CustomMatchForm onAddMatch={handleAddCustomMatch} />
+              
+              {customMatches.length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <h4 className="text-sm font-medium text-gray-200">Added Custom Matches</h4>
+                  <div className="space-y-2">
+                    {customMatches.map(match => (
+                      <div key={match.id} className="flex items-center justify-between p-2 rounded bg-white/5">
+                        <div className="flex items-center gap-4">
+                          {match.team1.logo && (
+                            <img src={match.team1.logo} alt={match.team1.name} className="w-6 h-6 object-contain" />
+                          )}
+                          <span className="text-sm text-gray-200">
+                            {match.time} - {match.team1.name} vs {match.team2.name}
+                          </span>
+                          {match.team2.logo && (
+                            <img src={match.team2.logo} alt={match.team2.name} className="w-6 h-6 object-contain" />
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCustomMatch(match.id)}
+                          className="text-gray-400 hover:text-red-400"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <CustomEntryForm
