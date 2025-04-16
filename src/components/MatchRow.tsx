@@ -2,8 +2,6 @@
 import React, { memo } from 'react';
 import { Match } from '@/lib/api/matches';
 import { TeamLogo } from './TeamLogo';
-import { Star, StarOff } from 'lucide-react';
-import { Toggle } from '@/components/ui/toggle';
 
 interface MatchRowProps {
   match: Match;
@@ -12,8 +10,6 @@ interface MatchRowProps {
   showLogos: boolean;
   loadedImages: Record<string, boolean>;
   loadingStates: Record<string, boolean>;
-  isHighlighted?: boolean;
-  onHighlightToggle?: (matchId: string) => void;
 }
 
 export const MatchRow = memo(({ 
@@ -22,9 +18,7 @@ export const MatchRow = memo(({
   showTime, 
   showLogos,
   loadedImages,
-  loadingStates,
-  isHighlighted = false,
-  onHighlightToggle
+  loadingStates 
 }: MatchRowProps) => {
   const isCustomEntry = 'isCustomEntry' in match && match.isCustomEntry;
 
@@ -32,7 +26,7 @@ export const MatchRow = memo(({
     <div className="space-y-1">
       <div 
         className={`rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm ${
-          isHighlighted ? 'bg-amber-500/20' : isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
+          isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
         }`}
       >
         <div className="px-3 py-2 flex items-center h-[60px]">
@@ -85,22 +79,9 @@ export const MatchRow = memo(({
           </div>
 
           {!isCustomEntry && (
-            <>
-              <div className="text-xs font-medium text-gray-500 uppercase ml-2">
-                {match.tournament}
-              </div>
-              <Toggle
-                className="ml-2"
-                pressed={isHighlighted}
-                onPressedChange={() => onHighlightToggle?.(match.id)}
-              >
-                {isHighlighted ? (
-                  <Star className="h-4 w-4 text-amber-500" />
-                ) : (
-                  <StarOff className="h-4 w-4" />
-                )}
-              </Toggle>
-            </>
+            <div className="text-xs font-medium text-gray-500 uppercase ml-2">
+              {match.tournament}
+            </div>
           )}
         </div>
       </div>
