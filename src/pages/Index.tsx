@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MatchList } from '@/components/MatchList';
@@ -13,6 +12,7 @@ import { supabase } from '@/lib/supabase/client';
 
 const Index = () => {
   const [selectedMatches, setSelectedMatches] = useState<string[]>([]);
+  const [highlightedMatches, setHighlightedMatches] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
@@ -45,6 +45,14 @@ const Index = () => {
     setSelectedMatches((prev) =>
       prev.includes(matchId)
         ? prev.filter((id) => id !== matchId)
+        : [...prev, matchId]
+    );
+  };
+
+  const handleHighlightToggle = (matchId: string) => {
+    setHighlightedMatches(prev =>
+      prev.includes(matchId)
+        ? prev.filter(id => id !== matchId)
         : [...prev, matchId]
     );
   };
@@ -193,6 +201,8 @@ const Index = () => {
                   matches={matches}
                   selectedMatches={selectedMatches}
                   onMatchSelect={handleMatchSelect}
+                  highlightedMatches={highlightedMatches}
+                  onHighlightToggle={handleHighlightToggle}
                 />
               ) : (
                 <div className="text-gray-400 text-center py-8">
@@ -205,6 +215,7 @@ const Index = () => {
               <h2 className="text-xl font-semibold">Customize Graphic</h2>
               <GraphicCustomizer
                 selectedMatches={selectedMatchObjects}
+                highlightedMatches={highlightedMatches}
               />
             </div>
           </div>

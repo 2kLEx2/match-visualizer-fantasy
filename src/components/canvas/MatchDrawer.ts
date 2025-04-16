@@ -1,4 +1,3 @@
-
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -14,6 +13,7 @@ interface DrawMatchOptions {
     title?: string;
   };
   logoCache: Record<string, HTMLImageElement>;
+  isHighlighted?: boolean;
 }
 
 export const drawMatch = ({
@@ -23,7 +23,8 @@ export const drawMatch = ({
   isBIG,
   width,
   settings,
-  logoCache
+  logoCache,
+  isHighlighted = false
 }: DrawMatchOptions) => {
   const rowHeight = 72; // smaller height for compact layout
   const verticalGap = 20; // spacing between matchboxes
@@ -33,7 +34,7 @@ export const drawMatch = ({
 
   const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
 
-  // Draw background box
+  // Draw background box with highlighted style if needed
   drawRoundedRect(
     ctx,
     padding,
@@ -41,7 +42,11 @@ export const drawMatch = ({
     width - padding * 2,
     rowHeight,
     16,
-    isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)'
+    isHighlighted 
+      ? 'rgba(245, 158, 11, 0.2)' 
+      : isBIG 
+        ? 'rgba(16, 163, 127, 0.2)' 
+        : 'rgba(27, 32, 40, 0.9)'
   );
 
   // Time text

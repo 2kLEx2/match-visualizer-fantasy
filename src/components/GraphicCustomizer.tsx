@@ -12,6 +12,7 @@ import { downloadGraphic } from '@/utils/graphicDownloader';
 
 interface CustomizerProps {
   selectedMatches: Match[];
+  highlightedMatches: string[];
 }
 
 interface CustomEntry {
@@ -20,7 +21,7 @@ interface CustomEntry {
   title: string;
 }
 
-export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
+export const GraphicCustomizer = ({ selectedMatches, highlightedMatches }: CustomizerProps) => {
   const { toast } = useToast();
   const graphicRef = useRef<HTMLDivElement>(null);
   const [newEntry, setNewEntry] = useState<CustomEntry>({
@@ -205,11 +206,16 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     isCustomEntry: true,
   }));
 
-  const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
-    const timeA = parseInt(a.time.replace(':', ''));
-    const timeB = parseInt(b.time.replace(':', ''));
-    return timeA - timeB;
-  });
+  const allMatches = [...selectedMatches, ...customMatches]
+    .sort((a, b) => {
+      const timeA = parseInt(a.time.replace(':', ''));
+      const timeB = parseInt(b.time.replace(':', ''));
+      return timeA - timeB;
+    })
+    .map(match => ({
+      ...match,
+      isHighlighted: highlightedMatches.includes(match.id)
+    }));
 
   return (
     <div className="space-y-6">
