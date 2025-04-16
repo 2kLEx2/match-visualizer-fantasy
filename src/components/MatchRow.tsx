@@ -10,6 +10,7 @@ interface MatchRowProps {
   showLogos: boolean;
   loadedImages: Record<string, boolean>;
   loadingStates: Record<string, boolean>;
+  isHighlighted?: boolean;
 }
 
 export const MatchRow = memo(({ 
@@ -18,16 +19,21 @@ export const MatchRow = memo(({
   showTime, 
   showLogos,
   loadedImages,
-  loadingStates 
+  loadingStates,
+  isHighlighted = false
 }: MatchRowProps) => {
   const isCustomEntry = 'isCustomEntry' in match && match.isCustomEntry;
+  
+  const getBgColor = () => {
+    if (isHighlighted) return 'bg-primary/40';
+    if (isBIG) return 'bg-primary/20';
+    return 'bg-[#1B2028]/90';
+  };
 
   return (
     <div className="space-y-1">
       <div 
-        className={`rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm ${
-          isBIG ? 'bg-primary/20' : 'bg-[#1B2028]/90'
-        }`}
+        className={`rounded-md overflow-hidden transition-all duration-300 hover:bg-slate-800/50 backdrop-blur-sm ${getBgColor()}`}
       >
         <div className="px-3 py-2 flex items-center h-[60px]">
           {showTime && (
@@ -85,11 +91,6 @@ export const MatchRow = memo(({
           )}
         </div>
       </div>
-      {isBIG && !isCustomEntry && (
-        <div className="text-xs text-primary font-medium italic pl-[70px]">
-          Anwesenheitspflicht
-        </div>
-      )}
     </div>
   );
 });
