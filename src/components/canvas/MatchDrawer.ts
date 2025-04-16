@@ -1,4 +1,3 @@
-
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -63,13 +62,43 @@ export const drawMatch = ({
     (isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)')
   );
 
+  const drawTextWithStroke = (
+    text: string, 
+    x: number, 
+    y: number, 
+    fontSize: number, 
+    fontWeight: string = 'bold', 
+    color: string = '#000000',
+    strokeColor: string = 'white',
+    strokeWidth: number = 2
+  ) => {
+    ctx.font = `${fontWeight} ${fontSize}px Inter`;
+    
+    // Draw stroke
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    
+    // Adjust text positioning for stroke
+    ctx.strokeText(text, x, y);
+    
+    // Draw main text
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  };
+
   // Time text
   if (settings.showTime) {
-    ctx.font = 'bold 36px Inter';
-    ctx.fillStyle = '#9CA3AF';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(match.time, padding + 16, verticalCenter);
+    const timeColor = isHighlighted ? '#000000' : '#9CA3AF';
+    drawTextWithStroke(
+      match.time, 
+      padding + 16, 
+      verticalCenter, 
+      36, 
+      'bold', 
+      timeColor
+    );
   }
 
   const timeBlockWidth = settings.showTime ? 180 : 0;
@@ -112,11 +141,17 @@ export const drawMatch = ({
   const team1Name = truncateText(ctx, match.team1.name, maxTextWidth);
   ctx.fillText(team1Name, team1NameX, verticalCenter);
 
-  // --- VS Text
-  ctx.font = `${vsFontSize}px Inter`;
-  ctx.fillStyle = '#6B7280';
-  ctx.textAlign = 'center';
-  ctx.fillText(vsText, centerX, verticalCenter);
+  if (isHighlighted) {
+    // Redraw VS text with black color and white stroke
+    drawTextWithStroke(
+      vsText, 
+      centerX, 
+      verticalCenter, 
+      vsFontSize, 
+      'bold', 
+      '#000000'
+    );
+  }
 
   // --- TEAM 2
   const team2LogoX = centerX + 60 + logoTextGap;
@@ -140,12 +175,17 @@ export const drawMatch = ({
   const team2Name = truncateText(ctx, match.team2.name, maxTextWidth);
   ctx.fillText(team2Name, team2NameX, verticalCenter);
 
-  // --- Tournament Name
+  // Tournament Name
   if (match.tournament) {
-    ctx.font = '16px Inter';
-    ctx.fillStyle = '#6B7280';
-    ctx.textAlign = 'right';
-    ctx.fillText(match.tournament, width - padding - 16, verticalCenter);
+    const tournamentColor = isHighlighted ? '#000000' : '#6B7280';
+    drawTextWithStroke(
+      match.tournament, 
+      width - padding - 16, 
+      verticalCenter, 
+      16, 
+      'normal', 
+      tournamentColor
+    );
   }
 
   // --- BIG Special Label
@@ -158,4 +198,3 @@ export const drawMatch = ({
     ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
   }
 };
-
