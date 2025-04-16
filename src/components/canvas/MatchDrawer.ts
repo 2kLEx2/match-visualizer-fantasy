@@ -33,6 +33,7 @@ export const drawMatch = ({
   const padding = 48;
   const logoSize = 49;
   const logoTextGap = 16;
+  const borderWidth = 4; // increased border width
 
   const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
 
@@ -41,10 +42,10 @@ export const drawMatch = ({
     // Draw border first (white with 0.5 opacity)
     drawRoundedRect(
       ctx,
-      padding - 2, // slightly larger for border
-      y + verticalGap / 2 - 2,
-      width - padding * 2 + 4,
-      rowHeight + 4,
+      padding - borderWidth, // adjusted for larger border
+      y + verticalGap / 2 - borderWidth,
+      width - padding * 2 + (borderWidth * 2),
+      rowHeight + (borderWidth * 2),
       16,
       'rgba(255, 255, 255, 0.5)'
     );
@@ -153,6 +154,8 @@ export const drawMatch = ({
     ctx.font = 'italic 30px Inter';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, y + verticalGap / 2 + rowHeight + 6);
+    const labelY = isHighlighted ? y + verticalGap / 2 + rowHeight + 12 : y + verticalGap / 2 + rowHeight + 6;
+    ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
   }
 };
+
