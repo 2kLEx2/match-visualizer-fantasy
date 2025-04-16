@@ -27,7 +27,8 @@ export const drawMatch = ({
   logoCache,
   isHighlighted = false
 }: DrawMatchOptions) => {
-  const rowHeight = 72; // smaller height for compact layout
+  const baseRowHeight = 72; // base height for compact layout
+  const rowHeight = isHighlighted ? baseRowHeight * 2 : baseRowHeight; // double height for highlighted matches
   const verticalGap = 20; // spacing between matchboxes
   const padding = 48;
   const logoSize = 49;
@@ -35,7 +36,21 @@ export const drawMatch = ({
 
   const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
 
-  // Draw background box
+  // Draw background box with border for highlighted matches
+  if (isHighlighted) {
+    // Draw border first (white with 0.5 opacity)
+    drawRoundedRect(
+      ctx,
+      padding - 2, // slightly larger for border
+      y + verticalGap / 2 - 2,
+      width - padding * 2 + 4,
+      rowHeight + 4,
+      16,
+      'rgba(255, 255, 255, 0.5)'
+    );
+  }
+
+  // Draw main background
   drawRoundedRect(
     ctx,
     padding,
@@ -43,7 +58,7 @@ export const drawMatch = ({
     width - padding * 2,
     rowHeight,
     16,
-    isHighlighted ? 'rgba(16, 163, 127, 0.4)' : 
+    isHighlighted ? 'rgba(71, 224, 99, 0.5)' : 
     (isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)')
   );
 
@@ -69,7 +84,7 @@ export const drawMatch = ({
   }
 
   // Layout spacing
-  const maxTextWidth = 300;  // Keep only ONE declaration
+  const maxTextWidth = 300;
   const vsText = 'vs';
   const vsFontSize = 20;
 
