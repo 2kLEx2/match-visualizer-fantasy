@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { downloadGraphic } from '@/utils/graphicDownloader';
 import { HighlightMatchSelector } from './HighlightMatchSelector';
 import { CustomMatchForm } from './CustomMatchForm';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -218,7 +219,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     team1: { name: entry.title, logo: '' },
     team2: { name: '', logo: '' },
     tournament: '',
-    date: new Date().toISOString(),
     isCustomEntry: true,
   }))].sort((a, b) => {
     const timeA = parseInt(a.time.replace(':', ''));
@@ -229,100 +229,119 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   return (
     <div className="space-y-6">
       <Card className="p-6 backdrop-blur-sm bg-white/10 border-0">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium text-gray-200">
-              Graphic Title
-            </label>
-            <Input
-              id="title"
-              value={customTitle}
-              onChange={(e) => setCustomTitle(e.target.value)}
-              placeholder="Enter custom title"
-              className="bg-white/5 border-0 text-white placeholder:text-gray-400"
-            />
-          </div>
+        <Accordion type="single" collapsible className="space-y-4">
+          <AccordionItem value="title" className="border-white/10">
+            <AccordionTrigger className="text-white hover:text-white/90">Title Settings</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium text-gray-200">
+                  Graphic Title
+                </label>
+                <Input
+                  id="title"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  placeholder="Enter custom title"
+                  className="bg-white/5 border-0 text-white placeholder:text-gray-400"
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-          <div className="space-y-4">
-            <HighlightMatchSelector 
-              matches={allMatches}
-              highlightedMatchId={highlightedMatchId}
-              onHighlightChange={setHighlightedMatchId}
-              enabled={isHighlightEnabled}
-              onToggle={setIsHighlightEnabled}
-            />
+          <AccordionItem value="highlight" className="border-white/10">
+            <AccordionTrigger className="text-white hover:text-white/90">Match Highlighting</AccordionTrigger>
+            <AccordionContent>
+              <HighlightMatchSelector 
+                matches={allMatches}
+                highlightedMatchId={highlightedMatchId}
+                onHighlightChange={setHighlightedMatchId}
+                enabled={isHighlightEnabled}
+                onToggle={setIsHighlightEnabled}
+              />
+            </AccordionContent>
+          </AccordionItem>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Custom Matches</h3>
-              <CustomMatchForm onAddMatch={handleAddCustomMatch} />
-              
-              {customMatches.length > 0 && (
-                <div className="space-y-2 mt-4">
-                  <h4 className="text-sm font-medium text-gray-200">Added Custom Matches</h4>
-                  <div className="space-y-2">
-                    {customMatches.map(match => (
-                      <div key={match.id} className="flex items-center justify-between p-2 rounded bg-white/5">
-                        <div className="flex items-center gap-4">
-                          {match.team1.logo && (
-                            <img src={match.team1.logo} alt={match.team1.name} className="w-6 h-6 object-contain" />
-                          )}
-                          <span className="text-sm text-gray-200">
-                            {match.time} - {match.team1.name} vs {match.team2.name}
-                          </span>
-                          {match.team2.logo && (
-                            <img src={match.team2.logo} alt={match.team2.name} className="w-6 h-6 object-contain" />
-                          )}
+          <AccordionItem value="custom-matches" className="border-white/10">
+            <AccordionTrigger className="text-white hover:text-white/90">Custom Matches</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4">
+                <CustomMatchForm onAddMatch={handleAddCustomMatch} />
+                
+                {customMatches.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    <h4 className="text-sm font-medium text-gray-200">Added Custom Matches</h4>
+                    <div className="space-y-2">
+                      {customMatches.map(match => (
+                        <div key={match.id} className="flex items-center justify-between p-2 rounded bg-white/5">
+                          <div className="flex items-center gap-4">
+                            {match.team1.logo && (
+                              <img src={match.team1.logo} alt={match.team1.name} className="w-6 h-6 object-contain" />
+                            )}
+                            <span className="text-sm text-gray-200">
+                              {match.time} - {match.team1.name} vs {match.team2.name}
+                            </span>
+                            {match.team2.logo && (
+                              <img src={match.team2.logo} alt={match.team2.name} className="w-6 h-6 object-contain" />
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteCustomMatch(match.id)}
+                            className="text-gray-400 hover:text-red-400"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteCustomMatch(match.id)}
-                          className="text-gray-400 hover:text-red-400"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-            <CustomEntryForm
-              newEntry={newEntry}
-              onEntryChange={setNewEntry}
-              onAddEntry={addCustomEntry}
-            />
-            <CustomEntriesList
-              entries={customEntries}
-              onRemoveEntry={removeCustomEntry}
-            />
-          </div>
+          <AccordionItem value="custom-entries" className="border-white/10">
+            <AccordionTrigger className="text-white hover:text-white/90">Custom Entries</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4">
+                <CustomEntryForm
+                  newEntry={newEntry}
+                  onEntryChange={setNewEntry}
+                  onAddEntry={addCustomEntry}
+                />
+                <CustomEntriesList
+                  entries={customEntries}
+                  onRemoveEntry={removeCustomEntry}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
-          <div className="flex gap-3">
-            <Button
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white"
-            >
-              <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
-              {isDownloading ? 'Downloading...' : 'Download Graphic'}
-            </Button>
-            
-            <Button
-              onClick={copyToClipboard}
-              disabled={isCopying}
-              variant="secondary"
-              className="flex-1"
-            >
-              {isCopying ? (
-                <CopyCheck className="w-4 h-4 mr-2" />
-              ) : (
-                <Copy className="w-4 h-4 mr-2" />
-              )}
-              {isCopying ? 'Copying...' : 'Copy Graphic'}
-            </Button>
-          </div>
+        <div className="flex gap-3 mt-6">
+          <Button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="flex-1 bg-primary hover:bg-primary/90 text-white"
+          >
+            <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
+            {isDownloading ? 'Downloading...' : 'Download Graphic'}
+          </Button>
+          
+          <Button
+            onClick={copyToClipboard}
+            disabled={isCopying}
+            variant="secondary"
+            className="flex-1"
+          >
+            {isCopying ? (
+              <CopyCheck className="w-4 h-4 mr-2" />
+            ) : (
+              <Copy className="w-4 h-4 mr-2" />
+            )}
+            {isCopying ? 'Copying...' : 'Copy Graphic'}
+          </Button>
         </div>
       </Card>
 
