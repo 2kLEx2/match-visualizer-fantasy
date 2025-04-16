@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +68,6 @@ export const CustomMatchForm = ({ onAddMatch }: CustomMatchFormProps) => {
         logo: formData.team2Logo,
       },
       tournament: formData.tournament,
-      date: new Date().toISOString(),
     };
 
     onAddMatch(customMatch);
