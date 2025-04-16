@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
@@ -48,11 +49,25 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
 
     const padding = 24;
 
-    // Calculate total height based on matches
-    const totalHeight = matches.reduce((acc, match) => {
+    // Calculate total height based on matches, accounting for highlighted match
+    let totalHeight = 140; // Initial height for title section
+    let currentY = 140;
+    
+    matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
-      return acc + (isBIG ? 110 : 90) + (isBIG ? 15 : 0);
-    }, 140);
+      const isHighlighted = settings.highlightedMatchId === match.id;
+      
+      // Base row height without spacing
+      const baseRowHeight = 72; 
+      // Double height for highlighted matches
+      const rowHeight = isHighlighted ? baseRowHeight * 2 : baseRowHeight;
+      
+      // Add vertical spacing
+      const verticalGap = 20;
+      
+      // Add this match's height to the total
+      totalHeight += rowHeight + verticalGap;
+    });
 
     canvas.height = totalHeight + padding;
     canvas.width = width;
@@ -88,9 +103,14 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
 
     console.log('Drawing matches with logoCache:', Object.keys(logoCache));
     
-    let currentY = 140;
+    // Reset for drawing matches
+    currentY = 140;
+    
+    // Draw each match with proper spacing
     matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
+      const isHighlighted = settings.highlightedMatchId === match.id;
+      
       drawMatch({
         ctx,
         match,
@@ -99,9 +119,19 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
         width,
         settings,
         logoCache,
-        isHighlighted: settings.highlightedMatchId === match.id
+        isHighlighted
       });
-      currentY += isBIG ? 110 : 90;
+      
+      // Advance Y position - needs to account for highlighted matches taking more space
+      const baseRowHeight = 72;
+      const rowHeight = isHighlighted ? baseRowHeight * 2 : baseRowHeight;
+      const verticalGap = 20;
+      
+      // For BIG matches, we add extra space for "Anwesenheitspflicht" text
+      const bigMatchExtraSpace = isBIG ? 20 : 0;
+      
+      // Update the current Y position for the next match
+      currentY += rowHeight + verticalGap + bigMatchExtraSpace;
     });
   };
 
