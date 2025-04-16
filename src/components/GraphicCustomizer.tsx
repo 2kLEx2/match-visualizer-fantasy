@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
 import { Download, Copy, CopyCheck } from 'lucide-react';
@@ -10,6 +10,7 @@ import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
 import { downloadGraphic } from '@/utils/graphicDownloader';
 import { HighlightMatchSelector } from './HighlightMatchSelector';
+import { CustomMatchForm } from './CustomMatchForm';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -36,6 +37,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null);
   const [isHighlightEnabled, setIsHighlightEnabled] = useState(false);
+  const [customMatches, setCustomMatches] = useState<Match[]>([]);
 
   const copyToClipboard = async () => {
     if (!graphicRef.current) {
@@ -198,7 +200,11 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     }
   };
 
-  const customMatches: Match[] = customEntries.map(entry => ({
+  const handleAddCustomMatch = (match: Match) => {
+    setCustomMatches(prev => [...prev, match]);
+  };
+
+  const allMatches = [...selectedMatches, ...customMatches, ...customEntries.map(entry => ({
     id: entry.id,
     time: entry.time,
     team1: { name: entry.title, logo: '' },
@@ -206,9 +212,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     tournament: '',
     date: new Date().toISOString(),
     isCustomEntry: true,
-  }));
-
-  const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
+  }))].sort((a, b) => {
     const timeA = parseInt(a.time.replace(':', ''));
     const timeB = parseInt(b.time.replace(':', ''));
     return timeA - timeB;
@@ -233,12 +237,17 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
 
           <div className="space-y-4">
             <HighlightMatchSelector 
-              matches={selectedMatches}
+              matches={allMatches}
               highlightedMatchId={highlightedMatchId}
               onHighlightChange={setHighlightedMatchId}
               enabled={isHighlightEnabled}
               onToggle={setIsHighlightEnabled}
             />
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Add Custom Match</h3>
+              <CustomMatchForm onAddMatch={handleAddCustomMatch} />
+            </div>
 
             <CustomEntryForm
               newEntry={newEntry}
