@@ -9,6 +9,7 @@ import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
 import { downloadGraphic } from '@/utils/graphicDownloader';
+import { HighlightMatchSelector } from './HighlightMatchSelector';
 
 interface CustomizerProps {
   selectedMatches: Match[];
@@ -33,6 +34,8 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const [isCopying, setIsCopying] = useState(false);
   const [graphicScale, setGraphicScale] = useState(100);
   const [customTitle, setCustomTitle] = useState("Watchparty Schedule");
+  const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null);
+  const [isHighlightEnabled, setIsHighlightEnabled] = useState(false);
 
   const copyToClipboard = async () => {
     if (!graphicRef.current) {
@@ -229,6 +232,14 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           </div>
 
           <div className="space-y-4">
+            <HighlightMatchSelector 
+              matches={selectedMatches}
+              highlightedMatchId={highlightedMatchId}
+              onHighlightChange={setHighlightedMatchId}
+              enabled={isHighlightEnabled}
+              onToggle={setIsHighlightEnabled}
+            />
+
             <CustomEntryForm
               newEntry={newEntry}
               onEntryChange={setNewEntry}
@@ -283,6 +294,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
               textColor: '#FFFFFF',
               scale: graphicScale,
               title: customTitle,
+              highlightedMatchId: isHighlightEnabled ? highlightedMatchId : null,
             }}
             width={1200}
             height={675}

@@ -20,6 +20,7 @@ interface CanvasMatchGraphicProps {
     textColor: string;
     scale: number;
     title: string;
+    highlightedMatchId?: string | null;
   };
   width?: number;
   height?: number;
@@ -97,7 +98,8 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
         isBIG,
         width,
         settings,
-        logoCache
+        logoCache,
+        isHighlighted: settings.highlightedMatchId === match.id
       });
       currentY += isBIG ? 110 : 90;
     });
@@ -105,7 +107,6 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
 
   useEffect(() => {
     if (imagesLoaded && !bgLoading) {
-      console.log('Images loaded, drawing graphic with logoCache:', Object.keys(logoCache));
       drawGraphic();
     }
   }, [matches, settings, imagesLoaded, logoCache, bgImage, bgLoading]);
