@@ -40,6 +40,13 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
     handleRetryLoading
   } = useCanvasImages(matches);
 
+  useEffect(() => {
+    // Log the logoCache to check if data URLs are being added correctly
+    if (matches.some(match => match.team1.logo?.startsWith('data:') || match.team2.logo?.startsWith('data:'))) {
+      console.log('Custom match logos detected, logoCache keys:', Object.keys(logoCache).length);
+    }
+  }, [matches, logoCache]);
+
   const drawGraphic = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -101,7 +108,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
     ctx.textBaseline = 'middle';
     ctx.fillText(settings.title, width - padding - 24, 70);
 
-    console.log('Drawing matches with logoCache:', Object.keys(logoCache));
+    console.log('Drawing matches with logoCache keys:', Object.keys(logoCache).length);
     
     // Reset for drawing matches
     currentY = 140;

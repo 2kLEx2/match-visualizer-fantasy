@@ -44,6 +44,7 @@ export const useCanvasImages = (matches: Match[]) => {
       window.dataUrlCache = new Map<string, string>();
     }
     
+    // Extract all team logos from matches
     const teamLogos = matches
       .flatMap(match => [match.team1.logo, match.team2.logo])
       .filter(Boolean)
@@ -66,6 +67,26 @@ export const useCanvasImages = (matches: Match[]) => {
         return;
       }
       
+      // Handle data URLs directly
+      if (url.startsWith('data:')) {
+        console.log('Loading data URL directly');
+        const img = new Image();
+        img.onload = () => {
+          console.log('Data URL image loaded');
+          logoElements[url] = img;
+          loadedCount++;
+          checkIfComplete();
+        };
+        img.onerror = () => {
+          console.error('Failed to load data URL image');
+          loadedCount++;
+          checkIfComplete();
+        };
+        img.src = url;
+        return;
+      }
+      
+      // Handle regular URLs via proxy
       try {
         console.log(`Loading team logo via proxy: ${url}`);
         

@@ -1,3 +1,4 @@
+
 export const drawRoundedRect = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -47,10 +48,41 @@ export const drawTeamLogo = (
   preserveAspectRatio = false
 ) => {
   try {
+    // Skip empty URLs
+    if (!logoUrl) {
+      console.warn("Empty logo URL provided");
+      return;
+    }
+
+    // Check if this is a data URL (for custom uploaded images)
+    const isDataUrl = logoUrl.startsWith('data:');
+    
+    // For data URLs, we can create the image element on-the-fly
+    if (isDataUrl && !logoCache[logoUrl]) {
+      console.log('Creating image element for data URL');
+      const img = new Image();
+      img.src = logoUrl;
+      
+      // Only proceed if the image is loaded
+      if (!img.complete) {
+        console.log('Data URL image not yet loaded, deferring');
+        img.onload = () => {
+          console.log('Data URL image loaded');
+          logoCache[logoUrl] = img;
+          drawTeamLogo(ctx, logoUrl, x, y, size, logoCache, preserveAspectRatio);
+        };
+        return;
+      } else {
+        // Image is already loaded, add to cache
+        logoCache[logoUrl] = img;
+      }
+    }
+    
+    // Get the logo from cache
     const logo = logoCache[logoUrl];
     
     if (!logo) {
-      console.warn(`Logo not found in cache: ${logoUrl}`);
+      console.warn(`Logo not found in cache: ${logoUrl.substring(0, 50)}...`);
       return;
     }
     
@@ -60,7 +92,7 @@ export const drawTeamLogo = (
       const origHeight = logo.height;
       
       if (origWidth === 0 || origHeight === 0) {
-        console.warn(`Invalid image dimensions for ${logoUrl}: ${origWidth}x${origHeight}`);
+        console.warn(`Invalid image dimensions for ${logoUrl.substring(0, 50)}...: ${origWidth}x${origHeight}`);
         return;
       }
       
@@ -87,6 +119,6 @@ export const drawTeamLogo = (
       ctx.drawImage(logo, x, y, size, size);
     }
   } catch (error) {
-    console.error(`Error drawing logo ${logoUrl}:`, error);
+    console.error(`Error drawing logo ${logoUrl ? logoUrl.substring(0, 50) + '...' : 'undefined'}:`, error);
   }
 };

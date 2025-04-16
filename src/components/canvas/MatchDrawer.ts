@@ -94,6 +94,10 @@ export const drawMatch = ({
   const team1NameX = team1LogoX - logoTextGap;
 
   if (settings.showLogos && match.team1.logo) {
+    // Log to debug
+    const isDataUrl = match.team1.logo.startsWith('data:');
+    console.log(`Drawing team1 logo: ${isDataUrl ? 'Data URL' : match.team1.logo.substring(0, 20)}...`);
+    
     drawTeamLogo(
       ctx,
       match.team1.logo,
@@ -123,6 +127,10 @@ export const drawMatch = ({
   const team2NameX = team2LogoX + logoSize + logoTextGap;
 
   if (settings.showLogos && match.team2.logo) {
+    // Log to debug
+    const isDataUrl = match.team2.logo.startsWith('data:');
+    console.log(`Drawing team2 logo: ${isDataUrl ? 'Data URL' : match.team2.logo.substring(0, 20)}...`);
+    
     drawTeamLogo(
       ctx,
       match.team2.logo,
@@ -158,4 +166,3 @@ export const drawMatch = ({
     ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
   }
 };
-
