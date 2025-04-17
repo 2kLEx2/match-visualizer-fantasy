@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
@@ -80,6 +79,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
     canvas.height = totalHeight + padding;
     canvas.width = width;
 
+    // Clear the canvas with a transparent background
     ctx.clearRect(0, 0, width, canvas.height);
     
     if (bgImage) {
@@ -89,9 +89,10 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
       const scaledHeight = bgImage.height * scale;
       ctx.drawImage(bgImage, 0, 0, scaledWidth, scaledHeight);
       
+      // Optional: If you want a very light overlay, use a very transparent color
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
