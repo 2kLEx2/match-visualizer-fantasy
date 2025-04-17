@@ -44,24 +44,37 @@ export const downloadGraphic = async (
     
     if (graphicRef instanceof HTMLCanvasElement) {
       console.log('Using canvas directly');
-      // If it's already a canvas, clone it to get a clean copy
+      // If it's already a canvas, use it directly without scaling
       canvas = document.createElement('canvas');
       canvas.width = graphicRef.width;
       canvas.height = graphicRef.height;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(graphicRef, 0, 0);
+        ctx.drawImage(graphicRef, 0, 0, graphicRef.width, graphicRef.height);
       }
     } else {
       console.log('Using html2canvas to capture DOM element');
-      // If it's a DOM element, use html2canvas
+      
+      // Find the canvas within the graphicRef
+      const existingCanvas = graphicRef.querySelector('canvas');
+      if (!existingCanvas) {
+        throw new Error('Canvas element not found');
+      }
+      
+      // Use the exact dimensions of the existing canvas
+      const width = existingCanvas.width;
+      const height = existingCanvas.height;
+      
+      console.log(`Canvas dimensions: ${width}x${height}`);
+      
+      // Use html2canvas with the proper dimensions to match the canvas
       canvas = await html2canvas(graphicRef, {
         backgroundColor: null,
-        scale: 2,
+        scale: 1, // Use a consistent scale
         logging: true, // Enable detailed logging
-        width: 600,
-        height: graphicRef.offsetHeight,
-        windowWidth: 600,
+        width: width,
+        height: height,
+        windowWidth: width,
         useCORS: true,
         allowTaint: true,
         onclone: (clonedDoc) => {
@@ -77,8 +90,14 @@ export const downloadGraphic = async (
           // Ensure graphic containers have proper scaling
           const graphics = clonedDoc.querySelectorAll('[data-graphic="true"]');
           graphics.forEach(graphic => {
-            graphic.setAttribute('style', 'width: 600px; transform: scale(1); transform-origin: top left;');
+            graphic.setAttribute('style', `width: ${width}px; transform: scale(1); transform-origin: top left;`);
           });
+          
+          // Make sure the canvas scale is reset to 1 for consistent output
+          const canvasElement = clonedDoc.querySelector('canvas');
+          if (canvasElement) {
+            canvasElement.style.transform = 'scale(1)';
+          }
         }
       });
     }

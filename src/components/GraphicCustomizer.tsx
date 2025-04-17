@@ -351,6 +351,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           draggable
           onDragStart={handleDragStart}
           className="cursor-grab active:cursor-grabbing"
+          data-graphic="true"
         >
           <CanvasMatchGraphic
             matches={allMatches}

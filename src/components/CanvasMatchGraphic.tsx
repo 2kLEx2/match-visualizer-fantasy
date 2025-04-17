@@ -76,6 +76,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
       totalHeight += rowHeight + verticalGap;
     });
 
+    // Set exact canvas dimensions - this is important for the download
     canvas.height = totalHeight + padding;
     canvas.width = width;
 
@@ -202,6 +203,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
           display: bgLoading || bgError || !matches.length ? 'none' : 'block',
           background: FALLBACK_BG,
         }}
+        data-graphic-canvas="true"
       />
     </>
   );

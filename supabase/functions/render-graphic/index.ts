@@ -22,7 +22,7 @@ interface RenderRequest {
     showTime: boolean;
     backgroundColor: string;
     textColor: string;
-    title?: string; // Added title as optional
+    title?: string;
   };
   imageData: string;
 }
@@ -49,7 +49,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         image: base64Data,
-        matchesProcessed: matches.length 
+        matchesProcessed: matches.length,
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: {
