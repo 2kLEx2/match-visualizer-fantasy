@@ -1,3 +1,4 @@
+
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -150,7 +151,7 @@ export const drawMatch = ({
   // --- Tournament Name
   if (match.tournament) {
     ctx.font = '16px Inter';
-    ctx.fillStyle = '#6B7280';
+    ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#6B7280';
     ctx.textAlign = 'right';
     ctx.fillText(match.tournament, width - padding - 16, verticalCenter);
   }
@@ -165,3 +166,4 @@ export const drawMatch = ({
     ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
   }
 };
+
