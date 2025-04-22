@@ -1,4 +1,3 @@
-
 import { Match } from '@/lib/api/matches';
 import { drawRoundedRect, drawTeamLogo, truncateText } from '@/lib/utils/canvasDrawing';
 
@@ -66,7 +65,7 @@ export const drawMatch = ({
   // Time text
   if (settings.showTime) {
     ctx.font = 'bold 36px Inter';
-    ctx.fillStyle = '#9CA3AF';
+    ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#9CA3AF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(match.time, padding + 16, verticalCenter);
