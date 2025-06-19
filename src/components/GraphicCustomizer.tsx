@@ -24,30 +24,45 @@ interface CustomEntry {
   title: string;
 }
 
-// Helper function to sort matches with proper day handling
+// Helper function to sort matches by actual date and time
 const sortMatches = (matches: any[]) => {
   return matches.sort((a, b) => {
-    const timeA = a.time;
-    const timeB = b.time;
-    
-    // Extract hours and minutes
-    const [hoursA, minutesA] = timeA.split(':').map(Number);
-    const [hoursB, minutesB] = timeB.split(':').map(Number);
-    
-    // Convert to total minutes for easier comparison
-    let totalMinutesA = hoursA * 60 + minutesA;
-    let totalMinutesB = hoursB * 60 + minutesB;
-    
-    // If the time is in early morning hours (0-6), treat it as next day
-    // by adding 24 hours worth of minutes (1440 minutes)
-    if (hoursA >= 0 && hoursA <= 6) {
-      totalMinutesA += 1440; // Add 24 hours
-    }
-    if (hoursB >= 0 && hoursB <= 6) {
-      totalMinutesB += 1440; // Add 24 hours
+    // For matches with actual date property, use it directly
+    if (a.date && b.date) {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA.getTime() - dateB.getTime();
     }
     
-    return totalMinutesA - totalMinutesB;
+    // For custom entries without date, create a datetime based on today + time
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    
+    const getDateTime = (match: any) => {
+      if (match.date) {
+        return new Date(match.date);
+      }
+      
+      // For custom entries, combine today's date with the time
+      const timeStr = match.time;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      const dateTime = new Date(`${todayStr}T${timeStr}:00`);
+      
+      // If the time is in early morning hours (0-6), and it's currently late in the day,
+      // assume it's for tomorrow
+      const currentHour = now.getHours();
+      if (hours >= 0 && hours <= 6 && currentHour >= 18) {
+        dateTime.setDate(dateTime.getDate() + 1);
+      }
+      
+      return dateTime;
+    };
+    
+    const dateTimeA = getDateTime(a);
+    const dateTimeB = getDateTime(b);
+    
+    return dateTimeA.getTime() - dateTimeB.getTime();
   });
 };
 

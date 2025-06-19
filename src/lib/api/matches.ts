@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase/client';
 
 export interface Match {
@@ -14,6 +13,7 @@ export interface Match {
   time: string;
   tournament: string;
   tournament_logo?: string;
+  date?: string; // Add date field for proper sorting
 }
 
 // Fetch matches from Supabase database
@@ -109,6 +109,7 @@ export function transformMatchesData(data: any[]): Match[] {
     }),
     tournament: match.tournament,
     tournament_logo: match.tournament_logo,
+    date: match.start_time, // Include the full date for proper sorting
   }));
 }
 
