@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,33 @@ interface CustomEntry {
   time: string;
   title: string;
 }
+
+// Helper function to sort matches with proper day handling
+const sortMatches = (matches: any[]) => {
+  return matches.sort((a, b) => {
+    const timeA = a.time;
+    const timeB = b.time;
+    
+    // Extract hours and minutes
+    const [hoursA, minutesA] = timeA.split(':').map(Number);
+    const [hoursB, minutesB] = timeB.split(':').map(Number);
+    
+    // Convert to total minutes for easier comparison
+    let totalMinutesA = hoursA * 60 + minutesA;
+    let totalMinutesB = hoursB * 60 + minutesB;
+    
+    // If the time is in early morning hours (0-6), treat it as next day
+    // by adding 24 hours worth of minutes (1440 minutes)
+    if (hoursA >= 0 && hoursA <= 6) {
+      totalMinutesA += 1440; // Add 24 hours
+    }
+    if (hoursB >= 0 && hoursB <= 6) {
+      totalMinutesB += 1440; // Add 24 hours
+    }
+    
+    return totalMinutesA - totalMinutesB;
+  });
+};
 
 export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const { toast } = useToast();
@@ -115,11 +143,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
         isCustomEntry: true,
       }));
 
-      const allMatches = [...selectedMatches, ...customMatches].sort((a, b) => {
-        const timeA = parseInt(a.time.replace(':', ''));
-        const timeB = parseInt(b.time.replace(':', ''));
-        return timeA - timeB;
-      });
+      const allMatches = sortMatches([...selectedMatches, ...customMatches]);
 
       await downloadGraphic(
         graphicRef.current,
@@ -213,18 +237,19 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
-  const allMatches = [...selectedMatches, ...customMatches, ...customEntries.map(entry => ({
-    id: entry.id,
-    time: entry.time,
-    team1: { name: entry.title, logo: '' },
-    team2: { name: '', logo: '' },
-    tournament: '',
-    isCustomEntry: true,
-  }))].sort((a, b) => {
-    const timeA = parseInt(a.time.replace(':', ''));
-    const timeB = parseInt(b.time.replace(':', ''));
-    return timeA - timeB;
-  });
+  // Apply the improved sorting to all matches
+  const allMatches = sortMatches([
+    ...selectedMatches, 
+    ...customMatches, 
+    ...customEntries.map(entry => ({
+      id: entry.id,
+      time: entry.time,
+      team1: { name: entry.title, logo: '' },
+      team2: { name: '', logo: '' },
+      tournament: '',
+      isCustomEntry: true,
+    }))
+  ]);
 
   return (
     <div className="space-y-6">
