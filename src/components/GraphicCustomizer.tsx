@@ -403,6 +403,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
               scale: graphicScale,
               title: customTitle,
               highlightedMatchId: isHighlightEnabled ? highlightedMatchId : null,
+              totalSelectedMatches: selectedMatches.length + customMatches.length,
             }}
             width={1200}
             height={675}

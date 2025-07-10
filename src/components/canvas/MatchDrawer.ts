@@ -12,6 +12,7 @@ interface DrawMatchOptions {
     showLogos: boolean;
     showTime: boolean;
     title?: string;
+    totalSelectedMatches?: number;
   };
   logoCache: Record<string, HTMLImageElement>;
   isHighlighted?: boolean;
@@ -27,13 +28,17 @@ export const drawMatch = ({
   logoCache,
   isHighlighted = false
 }: DrawMatchOptions) => {
+  // Determine if we should scale up matches (1-2 selected matches only)
+  const shouldScaleUpMatches = settings.totalSelectedMatches && settings.totalSelectedMatches <= 2;
+  const scaleFactor = shouldScaleUpMatches ? 1.8 : 1;
+  
   const baseRowHeight = 72; // base height for compact layout
-  const rowHeight = isHighlighted ? baseRowHeight * 2 : baseRowHeight; // double height for highlighted matches
-  const verticalGap = 20; // spacing between matchboxes
+  const rowHeight = isHighlighted ? baseRowHeight * 2 * scaleFactor : baseRowHeight * scaleFactor;
+  const verticalGap = 20 * scaleFactor; // spacing between matchboxes
   const padding = 48;
-  const logoSize = 49;
-  const logoTextGap = 16;
-  const borderWidth = 4; // increased border width
+  const logoSize = 49 * scaleFactor;
+  const logoTextGap = 16 * scaleFactor;
+  const borderWidth = 4 * scaleFactor; // increased border width
 
   const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
 
@@ -65,32 +70,32 @@ export const drawMatch = ({
 
   // Time text
   if (settings.showTime) {
-    ctx.font = 'bold 36px Inter';
+    ctx.font = `bold ${Math.round(36 * scaleFactor)}px Inter`;
     ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#9CA3AF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(match.time, padding + 16, verticalCenter);
+    ctx.fillText(match.time, padding + 16 * scaleFactor, verticalCenter);
   }
 
-  const timeBlockWidth = settings.showTime ? 180 : 0;
+  const timeBlockWidth = settings.showTime ? 180 * scaleFactor : 0;
   const centerX = width / 2;
 
   if ('isCustomEntry' in match && match.isCustomEntry) {
     ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
-    ctx.font = 'bold 32px Inter';
+    ctx.font = `bold ${Math.round(32 * scaleFactor)}px Inter`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
+    ctx.fillText(match.team1.name, centerX - 280 * scaleFactor, verticalCenter);
     return;
   }
 
   // Layout spacing
-  const maxTextWidth = 300;
+  const maxTextWidth = 300 * scaleFactor;
   const vsText = 'vs';
-  const vsFontSize = 20;
+  const vsFontSize = 20 * scaleFactor;
 
   // --- TEAM 1
-  const team1LogoX = centerX - logoSize - logoTextGap - 60;
+  const team1LogoX = centerX - logoSize - logoTextGap - 60 * scaleFactor;
   const team1NameX = team1LogoX - logoTextGap;
 
   if (settings.showLogos && match.team1.logo) {
@@ -109,7 +114,7 @@ export const drawMatch = ({
     );
   }
 
-  ctx.font = 'bold 32px Inter';
+  ctx.font = `bold ${Math.round(32 * scaleFactor)}px Inter`;
   ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
@@ -117,13 +122,13 @@ export const drawMatch = ({
   ctx.fillText(team1Name, team1NameX, verticalCenter);
 
   // --- VS Text
-  ctx.font = `${vsFontSize}px Inter`;
+  ctx.font = `${Math.round(vsFontSize)}px Inter`;
   ctx.fillStyle = '#6B7280';
   ctx.textAlign = 'center';
   ctx.fillText(vsText, centerX, verticalCenter);
 
   // --- TEAM 2
-  const team2LogoX = centerX + 60 + logoTextGap;
+  const team2LogoX = centerX + 60 * scaleFactor + logoTextGap;
   const team2NameX = team2LogoX + logoSize + logoTextGap;
 
   if (settings.showLogos && match.team2.logo) {
@@ -142,7 +147,7 @@ export const drawMatch = ({
     );
   }
 
-  ctx.font = 'bold 32px Inter';
+  ctx.font = `bold ${Math.round(32 * scaleFactor)}px Inter`;
   ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
   ctx.textAlign = 'left';
   const team2Name = truncateText(ctx, match.team2.name, maxTextWidth);
@@ -150,19 +155,19 @@ export const drawMatch = ({
 
   // --- Tournament Name
   if (match.tournament) {
-    ctx.font = '16px Inter';
+    ctx.font = `${Math.round(16 * scaleFactor)}px Inter`;
     ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#6B7280';
     ctx.textAlign = 'right';
-    ctx.fillText(match.tournament, width - padding - 16, verticalCenter);
+    ctx.fillText(match.tournament, width - padding - 16 * scaleFactor, verticalCenter);
   }
 
   // --- BIG Special Label
   if (isBIG && !('isCustomEntry' in match)) {
     ctx.fillStyle = '#10A37F';
-    ctx.font = 'italic 30px Inter';
+    ctx.font = `italic ${Math.round(30 * scaleFactor)}px Inter`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    const labelY = isHighlighted ? y + verticalGap / 2 + rowHeight + 12 : y + verticalGap / 2 + rowHeight + 6;
+    const labelY = isHighlighted ? y + verticalGap / 2 + rowHeight + 12 * scaleFactor : y + verticalGap / 2 + rowHeight + 6 * scaleFactor;
     ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
   }
 };
