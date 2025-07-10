@@ -62,7 +62,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
     
     // Determine if we should scale up matches (1-2 selected matches only)
     const shouldScaleUpMatches = settings.totalSelectedMatches && settings.totalSelectedMatches <= 2;
-    const matchScaleFactor = shouldScaleUpMatches ? 1.8 : 1;
+    const heightScaleFactor = shouldScaleUpMatches ? 1.8 : 1;
     
     matches.forEach(match => {
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
@@ -70,13 +70,13 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
       
       // Base row height without spacing
       const baseRowHeight = 72; 
-      // Apply dynamic scaling for 1-2 matches
-      const scaledRowHeight = baseRowHeight * matchScaleFactor;
+      // Apply dynamic scaling for 1-2 matches (height only)
+      const scaledRowHeight = baseRowHeight * heightScaleFactor;
       // Double height for highlighted matches (applied after scaling)
       const rowHeight = isHighlighted ? scaledRowHeight * 2 : scaledRowHeight;
       
       // Add vertical spacing (also scaled for consistency)
-      const verticalGap = 20 * matchScaleFactor;
+      const verticalGap = 20 * heightScaleFactor;
       
       // Add this match's height to the total
       totalHeight += rowHeight + verticalGap;
@@ -140,12 +140,12 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
       
       // Advance Y position - needs to account for highlighted matches taking more space
       const baseRowHeight = 72;
-      const scaledRowHeight = baseRowHeight * matchScaleFactor;
+      const scaledRowHeight = baseRowHeight * heightScaleFactor;
       const rowHeight = isHighlighted ? scaledRowHeight * 2 : scaledRowHeight;
-      const verticalGap = 20 * matchScaleFactor;
+      const verticalGap = 20 * heightScaleFactor;
       
       // For BIG matches, we add extra space for "Anwesenheitspflicht" text (also scaled)
-      const bigMatchExtraSpace = isBIG ? 20 * matchScaleFactor : 0;
+      const bigMatchExtraSpace = isBIG ? 20 * heightScaleFactor : 0;
       
       // Update the current Y position for the next match
       currentY += rowHeight + verticalGap + bigMatchExtraSpace;
@@ -205,7 +205,7 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
         style={{
           maxWidth: '100%',
           height: 'auto',
-          transform: `scale(${(settings.totalSelectedMatches && settings.totalSelectedMatches <= 2 ? Math.min(settings.scale / 100, 0.6) : settings.scale / 100)})`,
+          transform: `scale(${settings.scale / 100})`,
           transformOrigin: 'top left',
           borderRadius: '12px',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
