@@ -266,11 +266,19 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     }
 
     try {
-      // Save to Supabase database
+      // Save to Supabase database - delete existing and insert new
+      const { error: deleteError } = await supabase
+        .from('saved_schedules')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all existing records
+
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+      }
+
       const { error } = await supabase
         .from('saved_schedules')
-        .upsert({
-          id: 'latest-schedule', // Use fixed ID to always overwrite
+        .insert({
           schedule_data: allMatches
         });
 
