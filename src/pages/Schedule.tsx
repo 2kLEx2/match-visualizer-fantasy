@@ -13,12 +13,18 @@ const Schedule = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get matches from location state passed from the main page
+    // First try to get matches from location state (for fresh navigation)
     const matches = location.state?.matches as Match[];
     
-    if (matches && matches.length > 0) {
+    // If no location state, try to load from localStorage
+    const savedSchedule = !matches ? localStorage.getItem('savedSchedule') : null;
+    const parsedMatches = savedSchedule ? JSON.parse(savedSchedule) as Match[] : null;
+    
+    const matchesToFormat = matches || parsedMatches;
+    
+    if (matchesToFormat && matchesToFormat.length > 0) {
       // Format matches as requested: "time team1 vs team2 tournament name"
-      const formattedMatches = matches.map(match => {
+      const formattedMatches = matchesToFormat.map(match => {
         if ((match as any).isCustomEntry) {
           // Custom entries have the title in team1.name
           return `${match.time} ${match.team1.name}`;

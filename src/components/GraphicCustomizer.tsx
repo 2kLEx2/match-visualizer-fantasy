@@ -264,6 +264,9 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       return;
     }
 
+    // Save to localStorage for persistence
+    localStorage.setItem('savedSchedule', JSON.stringify(allMatches));
+    
     navigate('/schedule', { 
       state: { matches: allMatches }
     });
