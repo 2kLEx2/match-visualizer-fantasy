@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
-import { Download, Copy, CopyCheck, X } from 'lucide-react';
+import { Download, Copy, CopyCheck, X, Save } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ const sortMatches = (matches: any[]) => {
 
 export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const graphicRef = useRef<HTMLDivElement>(null);
   const [newEntry, setNewEntry] = useState<CustomEntry>({
     id: '',
@@ -252,6 +254,21 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
+  const handleSaveSchedule = () => {
+    if (allMatches.length === 0) {
+      toast({
+        title: "No matches to save",
+        description: "Please select matches or add custom entries first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    navigate('/schedule', { 
+      state: { matches: allMatches }
+    });
+  };
+
   // Apply the improved sorting to all matches
   const allMatches = sortMatches([
     ...selectedMatches, 
@@ -359,11 +376,11 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
           </AccordionItem>
         </Accordion>
 
-        <div className="flex gap-3 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
           <Button
             onClick={handleDownload}
             disabled={isDownloading}
-            className="flex-1 bg-primary hover:bg-primary/90 text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
           >
             <Download className={`w-4 h-4 mr-2 ${isDownloading ? 'animate-spin' : ''}`} />
             {isDownloading ? 'Downloading...' : 'Download Graphic'}
@@ -373,7 +390,6 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
             onClick={copyToClipboard}
             disabled={isCopying}
             variant="secondary"
-            className="flex-1"
           >
             {isCopying ? (
               <CopyCheck className="w-4 h-4 mr-2" />
@@ -381,6 +397,15 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
               <Copy className="w-4 h-4 mr-2" />
             )}
             {isCopying ? 'Copying...' : 'Copy Graphic'}
+          </Button>
+
+          <Button
+            onClick={handleSaveSchedule}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            Save Schedule
           </Button>
         </div>
       </Card>
