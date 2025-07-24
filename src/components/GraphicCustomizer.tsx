@@ -7,6 +7,7 @@ import { CanvasMatchGraphic } from './CanvasMatchGraphic';
 import { Match } from '@/lib/api/matches';
 import { Download, Copy, CopyCheck, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { CustomEntryForm } from './CustomEntryForm';
 import { CustomEntriesList } from './CustomEntriesList';
 import { Input } from '@/components/ui/input';
@@ -254,7 +255,7 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
     });
   };
 
-  const handleSaveSchedule = () => {
+  const handleSaveSchedule = async () => {
     if (allMatches.length === 0) {
       toast({
         title: "No matches to save",
@@ -264,12 +265,44 @@ export const GraphicCustomizer = ({ selectedMatches }: CustomizerProps) => {
       return;
     }
 
-    // Save to localStorage for persistence
-    localStorage.setItem('savedSchedule', JSON.stringify(allMatches));
-    
-    navigate('/schedule', { 
-      state: { matches: allMatches }
-    });
+    try {
+      // Save to Supabase database
+      const { error } = await supabase
+        .from('saved_schedules')
+        .upsert({
+          id: 'latest-schedule', // Use fixed ID to always overwrite
+          schedule_data: allMatches
+        });
+
+      if (error) {
+        console.error('Database error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save schedule to database.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Also save to localStorage for immediate navigation
+      localStorage.setItem('savedSchedule', JSON.stringify(allMatches));
+      
+      toast({
+        title: "Success",
+        description: "Schedule saved successfully! You can now access it via API.",
+      });
+
+      navigate('/schedule', { 
+        state: { matches: allMatches }
+      });
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save schedule.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Apply the improved sorting to all matches

@@ -50,6 +50,27 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_schedules: {
+        Row: {
+          created_at: string
+          id: string
+          schedule_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          schedule_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          schedule_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

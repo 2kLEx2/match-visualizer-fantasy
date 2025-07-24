@@ -3,3 +3,6 @@ project_id = "iwxvebibywavdrlkujmq"
 
 [functions.proxy-image]
 verify_jwt = false
+
+[functions.get-schedule]
+verify_jwt = false
