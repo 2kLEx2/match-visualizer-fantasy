@@ -2,6 +2,10 @@
 
 A standalone, reusable canvas-based graphic generation system for match schedules and sports graphics.
 
+## 🎯 Standalone Module
+
+This Canvas Build System has been extracted as a completely independent module that can be used in any React project. It has zero dependencies on the host application and provides a clean API for generating match graphics.
+
 ## Features
 
 - ✅ Canvas-based rendering for high-quality graphics
@@ -13,12 +17,27 @@ A standalone, reusable canvas-based graphic generation system for match schedule
 - ✅ React integration with hooks
 - ✅ TypeScript support
 
+## Installation & Setup
+
+Since this is a standalone module, you can copy the entire `src/lib/canvas` directory to any React project.
+
+### Required Dependencies
+
+```bash
+npm install react react-dom html2canvas
+```
+
+### Optional Dependencies (for React integration)
+```bash
+npm install @types/react @types/react-dom
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```tsx
-import { CanvasBuilder, useCanvasBuilder } from '@/lib/canvas/CanvasBuilder';
+import { CanvasBuilder, useCanvasBuilder } from './lib/canvas';
 
 const MyComponent = () => {
   const { buildSystem, downloadImage } = useCanvasBuilder();
@@ -61,7 +80,7 @@ const MyComponent = () => {
 ### Direct Canvas Usage
 
 ```typescript
-import { CanvasBuildSystem } from '@/lib/canvas/CanvasBuildSystem';
+import { CanvasBuildSystem } from './lib/canvas';
 
 const canvas = document.createElement('canvas');
 const buildSystem = new CanvasBuildSystem(canvas);

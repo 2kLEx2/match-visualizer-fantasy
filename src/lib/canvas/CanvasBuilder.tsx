@@ -1,6 +1,7 @@
 // React wrapper for the Canvas Build System
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { CanvasBuildSystem, Match, BuildSettings } from './CanvasBuildSystem';
+import { CanvasBuildSystem } from './CanvasBuildSystem';
+import type { Match, BuildSettings } from './types';
 
 interface CanvasBuilderProps {
   matches: Match[];

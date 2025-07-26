@@ -3,7 +3,7 @@ import { Match } from '@/lib/api/matches';
 import { ImageOff, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCanvasImages } from '@/hooks/useCanvasImages';
-import { drawMatch } from './canvas/MatchDrawer';
+import { MatchDrawer } from '@/lib/canvas';
 
 // Ensure dataUrlCache exists globally
 if (typeof window !== 'undefined' && !window.dataUrlCache) {
@@ -127,16 +127,19 @@ export const CanvasMatchGraphic = ({ matches, settings, width = 1200, height = 6
       const isBIG = match.team1.name === "BIG" || match.team2.name === "BIG";
       const isHighlighted = settings.highlightedMatchId === match.id;
       
-      drawMatch({
+      MatchDrawer.drawMatch(
         ctx,
         match,
-        y: currentY,
+        currentY,
         isBIG,
         width,
-        settings,
+        {
+          ...settings,
+          totalSelectedMatches: settings.totalSelectedMatches
+        },
         logoCache,
         isHighlighted
-      });
+      );
       
       // Advance Y position - needs to account for highlighted matches taking more space
       const baseRowHeight = 72;

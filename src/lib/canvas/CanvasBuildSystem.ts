@@ -1,29 +1,9 @@
 // Standalone Canvas Build System for Match Graphics
 // Extracted from the main application for reusability
 
-export interface Match {
-  id: string;
-  team1: { name: string; logo?: string };
-  team2: { name: string; logo?: string };
-  time: string;
-  tournament?: string;
-  isCustomEntry?: boolean;
-}
-
-export interface BuildSettings {
-  showLogos: boolean;
-  showTime: boolean;
-  backgroundColor: string;
-  textColor: string;
-  title?: string;
-  scale?: number;
-  width?: number;
-  height?: number;
-}
-
-export interface ImageCache {
-  [url: string]: HTMLImageElement;
-}
+// Import types from centralized location
+import type { Match, BuildSettings, ImageCache } from './types';
+export type { Match, BuildSettings, ImageCache } from './types';
 
 // Core canvas drawing utilities
 export class CanvasDrawingUtils {
@@ -188,96 +168,151 @@ export class ImageLoader {
   }
 }
 
-// Match drawing on canvas
+// Enhanced Match drawing on canvas - using the more sophisticated drawing logic
 export class MatchDrawer {
   static drawMatch(
     ctx: CanvasRenderingContext2D,
     match: Match,
-    x: number,
     y: number,
+    isBIG: boolean,
     width: number,
-    height: number,
-    settings: BuildSettings,
+    settings: BuildSettings & { totalSelectedMatches?: number },
     logoCache: ImageCache,
     isHighlighted = false
   ) {
-    const { showLogos, showTime, textColor } = settings;
-    const scale = isHighlighted ? 1.1 : 1;
-    const scaledHeight = height * scale;
-    const scaledY = y - (scaledHeight - height) / 2;
+    // Determine if we should scale up matches (1-2 selected matches only)
+    const shouldScaleUpMatches = settings.totalSelectedMatches && settings.totalSelectedMatches <= 2;
+    const heightScaleFactor = shouldScaleUpMatches ? 1.8 : 1;
+    
+    const baseRowHeight = 72; // base height for compact layout
+    const rowHeight = isHighlighted ? baseRowHeight * 2 * heightScaleFactor : baseRowHeight * heightScaleFactor;
+    const verticalGap = 20 * heightScaleFactor; // spacing between matchboxes
+    const padding = 48;
+    const logoSize = 49; // Keep logo size unchanged
+    const logoTextGap = 16; // Keep gaps unchanged
+    const borderWidth = 4; // Keep border width unchanged
 
-    // Background
-    const bgColor = isHighlighted ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)';
-    CanvasDrawingUtils.drawRoundedRect(ctx, x, scaledY, width, scaledHeight, 8, bgColor);
+    const verticalCenter = y + verticalGap / 2 + rowHeight / 2;
 
-    const logoSize = Math.min(scaledHeight * 0.6, 40);
-    const padding = 16;
-    let currentX = x + padding;
-
-    // Time
-    if (showTime && match.time) {
-      ctx.font = 'bold 14px Arial';
-      ctx.fillStyle = textColor;
-      ctx.textAlign = 'left';
-      ctx.fillText(match.time, currentX, scaledY + scaledHeight / 2 + 5);
-      currentX += 80;
+    // Draw background box with border for highlighted matches
+    if (isHighlighted) {
+      // Draw border first (white with 0.5 opacity)
+      CanvasDrawingUtils.drawRoundedRect(
+        ctx,
+        padding - borderWidth, // adjusted for larger border
+        y + verticalGap / 2 - borderWidth,
+        width - padding * 2 + (borderWidth * 2),
+        rowHeight + (borderWidth * 2),
+        16,
+        'rgba(255, 255, 255, 0.5)'
+      );
     }
 
-    // Team 1
-    if (showLogos && match.team1.logo) {
+    // Draw main background
+    CanvasDrawingUtils.drawRoundedRect(
+      ctx,
+      padding,
+      y + verticalGap / 2,
+      width - padding * 2,
+      rowHeight,
+      16,
+      isHighlighted ? 'rgba(71, 224, 99, 0.5)' : 
+      (isBIG ? 'rgba(16, 163, 127, 0.2)' : 'rgba(27, 32, 40, 0.9)')
+    );
+
+    // Time text
+    if (settings.showTime) {
+      ctx.font = 'bold 36px Inter';
+      ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#9CA3AF';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(match.time, padding + 16, verticalCenter);
+    }
+
+    const timeBlockWidth = settings.showTime ? 180 : 0;
+    const centerX = width / 2;
+
+    if ('isCustomEntry' in match && match.isCustomEntry) {
+      ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
+      ctx.font = 'bold 32px Inter';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(match.team1.name, centerX - 280, verticalCenter);
+      return;
+    }
+
+    // Layout spacing
+    const maxTextWidth = 300;
+    const vsText = 'vs';
+    const vsFontSize = 20;
+
+    // --- TEAM 1
+    const team1LogoX = centerX - logoSize - logoTextGap - 60;
+    const team1NameX = team1LogoX - logoTextGap;
+
+    if (settings.showLogos && match.team1.logo) {
       CanvasDrawingUtils.drawTeamLogo(
         ctx,
         match.team1.logo,
-        currentX,
-        scaledY + (scaledHeight - logoSize) / 2,
+        team1LogoX,
+        verticalCenter - logoSize / 2,
         logoSize,
         logoCache,
         true
       );
-      currentX += logoSize + 12;
     }
 
-    ctx.font = '16px Arial';
-    ctx.fillStyle = textColor;
-    ctx.textAlign = 'left';
-    const team1Text = CanvasDrawingUtils.truncateText(ctx, match.team1.name, 120);
-    ctx.fillText(team1Text, currentX, scaledY + scaledHeight / 2 + 5);
-    currentX += 140;
+    ctx.font = 'bold 32px Inter';
+    ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const team1Name = CanvasDrawingUtils.truncateText(ctx, match.team1.name, maxTextWidth);
+    ctx.fillText(team1Name, team1NameX, verticalCenter);
 
-    // VS
-    ctx.font = 'bold 14px Arial';
-    ctx.fillStyle = 'rgba(156, 163, 175, 1)';
+    // --- VS Text
+    ctx.font = `${vsFontSize}px Inter`;
+    ctx.fillStyle = '#6B7280';
     ctx.textAlign = 'center';
-    ctx.fillText('vs', currentX, scaledY + scaledHeight / 2 + 5);
-    currentX += 40;
+    ctx.fillText(vsText, centerX, verticalCenter);
 
-    // Team 2
-    if (showLogos && match.team2.logo) {
+    // --- TEAM 2
+    const team2LogoX = centerX + 60 + logoTextGap;
+    const team2NameX = team2LogoX + logoSize + logoTextGap;
+
+    if (settings.showLogos && match.team2.logo) {
       CanvasDrawingUtils.drawTeamLogo(
         ctx,
         match.team2.logo,
-        currentX,
-        scaledY + (scaledHeight - logoSize) / 2,
+        team2LogoX,
+        verticalCenter - logoSize / 2,
         logoSize,
         logoCache,
         true
       );
-      currentX += logoSize + 12;
     }
 
-    ctx.font = '16px Arial';
-    ctx.fillStyle = textColor;
+    ctx.font = 'bold 32px Inter';
+    ctx.fillStyle = isBIG ? '#10A37F' : '#FFFFFF';
     ctx.textAlign = 'left';
-    const team2Text = CanvasDrawingUtils.truncateText(ctx, match.team2.name, 120);
-    ctx.fillText(team2Text, currentX, scaledY + scaledHeight / 2 + 5);
+    const team2Name = CanvasDrawingUtils.truncateText(ctx, match.team2.name, maxTextWidth);
+    ctx.fillText(team2Name, team2NameX, verticalCenter);
 
-    // Tournament
+    // --- Tournament Name
     if (match.tournament) {
-      ctx.font = '12px Arial';
-      ctx.fillStyle = 'rgba(156, 163, 175, 1)';
+      ctx.font = '16px Inter';
+      ctx.fillStyle = isHighlighted ? '#FFFFFF' : '#6B7280';
       ctx.textAlign = 'right';
-      const tournamentText = CanvasDrawingUtils.truncateText(ctx, match.tournament, 150);
-      ctx.fillText(tournamentText, x + width - padding, scaledY + scaledHeight / 2 + 5);
+      ctx.fillText(match.tournament, width - padding - 16, verticalCenter);
+    }
+
+    // --- BIG Special Label
+    if (isBIG && !('isCustomEntry' in match)) {
+      ctx.fillStyle = '#10A37F';
+      ctx.font = 'italic 30px Inter';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const labelY = isHighlighted ? y + verticalGap / 2 + rowHeight + 12 : y + verticalGap / 2 + rowHeight + 6;
+      ctx.fillText('Anwesenheitspflicht', padding + timeBlockWidth, labelY);
     }
   }
 }
@@ -332,26 +367,31 @@ export class CanvasBuildSystem {
       currentY += 60;
     }
 
-    // Matches
-    const matchHeight = 60;
-    const matchPadding = 10;
+    // Enhanced settings for match drawing
+    const enhancedSettings = {
+      ...settings,
+      totalSelectedMatches: matches.length
+    };
 
-    matches.forEach((match) => {
+    // Calculate dynamic spacing based on match count
+    const baseSpacing = matches.length <= 2 ? 120 : 80;
+    
+    matches.forEach((match, index) => {
       const isHighlighted = highlightedIds.includes(match.id);
+      const isBIG = false; // Can be customized based on match importance
       
       MatchDrawer.drawMatch(
         this.ctx,
         match,
-        20,
         currentY,
-        width - 40,
-        matchHeight,
-        settings,
+        isBIG,
+        width,
+        enhancedSettings,
         this.imageCache,
         isHighlighted
       );
 
-      currentY += matchHeight + matchPadding;
+      currentY += baseSpacing;
     });
   }
 
